@@ -2,321 +2,280 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ドラッグ＆ドロップ座席カスタマイザー</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>座席決めマシーン</title>
     <style>
-        body { font-family: sans-serif; background-color: #f5f5f5; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; margin: 0; }
-        .monitor { width: 300px; background-color: #c6d9f1; text-align: center; padding: 8px; margin: 20px 0; border: 2px solid #000; font-weight: bold; }
-        
-        .drag-palette { display: flex; gap: 12px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .drag-item { padding: 8px 12px; font-weight: bold; border: 2px solid #333; border-radius: 5px; cursor: grab; user-select: none; text-align: center; font-size: 14px; }
-        .drag-item:active { cursor: grabbing; }
-        
-        .palette-normal { background-color: #ffffff; }
-        .palette-l1 { background-color: #e6f0ff; border-color: #0044ff; color: #0044ff; }
-        .palette-l2 { background-color: #fff9e6; border-color: #ffaa00; color: #ffaa00; }
-        .palette-l3 { background-color: #ffe6e6; border-color: #ff0000; color: #ff0000; }
-        .palette-dis { background-color: #555555; border-color: #222; color: #fff; }
-        .palette-emp { background-color: #ffffff; border-color: #bbb; color: #666; border-style: dashed; }
-
-        .controls { margin-bottom: 25px; display: flex; gap: 12px; }
-        .btn { padding: 10px 16px; font-size: 15px; font-weight: bold; cursor: pointer; border: 2px solid #333; border-radius: 5px; transition: 0.2s; }
-        .btn-shuffle { background-color: #e2e8f0; }
-        .btn-r1 { background-color: #9bbfff; }
-        .btn-r2 { background-color: #ffe599; }
-        .btn-r3 { background-color: #f4cccc; }
-        .btn-clear { background-color: #ff9999; } /* 保存クリアボタン */
-        .btn:hover { opacity: 0.8; transform: scale(1.03); }
-
-        .classroom { display: flex; flex-direction: column; gap: 30px; align-items: center; width: 100%; max-width: 1100px; }
-        .row-front { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; width: 75%; justify-content: center; }
-        .row-back { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; width: 100%; }
-        .island { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #000; background-color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        
-        .seat { width: 110px; height: 55px; border: 1px solid #bbb; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; box-sizing: border-box; background-color: #ffffff; transition: background-color 0.2s; }
-        
-        .seat.color-white { border-left: 6px solid #dddddd; }
-        .seat.color-blue { border-left: 6px solid #4a90e2; }
-        .seat.color-yellow { border-left: 6px solid #ffcc00; }
-        .seat.color-red { border-left: 6px solid #ff4d4d; }
-
-        .seat.bg-grade1 { background-color: #e6f0ff !important; color: #0044ff; } 
-        .seat.bg-grade2 { background-color: #fff9e6 !important; color: #cc8800; } 
-        .seat.bg-grade3 { background-color: #ffe6e6 !important; color: #ff0000; } 
-        .seat.bg-disabled { background-color: #555555 !important; color: #fff !important; } 
-        .seat.bg-empty { background-color: #ffffff !important; color: #ccc !important; }
-
-        .seat.drag-over { background-color: #e0f7fa !important; border: 2px dashed #00838f !important; }
-        .seat.mode-locked1 { border: 2px solid #0044ff !important; }
-        .seat.mode-locked2 { border: 2px solid #ffaa00 !important; }
-        .seat.mode-locked3 { border: 2px solid #ff0000 !important; }
-        .seat.mode-empty { border: 2px dashed #bbb !important; }
-
-        .seat.selected { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; transform: scale(1.08); z-index: 10; box-shadow: 0 0 15px #00ff66; }
-
-        .status-label { font-size: 11px; margin-top: 3px; color: #333; font-weight: bold; }
-        .seat.bg-disabled .status-label { color: #ccc !important; }
-        .seat.bg-empty .status-label { color: #ddd !important; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .setup-section, .action-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            width: 60px;
+            text-align: center;
+            font-size: 16px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button.reset-btn {
+            background: #dc2626;
+        }
+        button.reset-btn:hover {
+            background: #b91c1c;
+        }
+        .status-msg {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 5px;
+            min-height: 20px;
+        }
+        .classroom {
+            display: grid;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px auto;
+            padding: 20px;
+            background: #151515;
+            border-radius: 10px;
+            border: 2px dashed #444;
+            overflow-x: auto;
+        }
+        .seat {
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 60px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: #fff;
+        }
+        .seat.selected {
+            background: #059669;
+            border-color: #34d399;
+            box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+            animation: pop 0.3s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
 
-    <div class="monitor">モニター</div>
+<div class="container">
+    <h1>座席決めマシーン</h1>
     
-    <div class="drag-palette">
-        <div class="drag-item palette-normal" draggable="true" ondragstart="drag(event)" data-mode="normal">通常席に戻す</div>
-        <div class="drag-item palette-l1" draggable="true" ondragstart="drag(event)" data-mode="locked1">1年固定</div>
-        <div class="drag-item palette-l2" draggable="true" ondragstart="drag(event)" data-mode="locked2">2年固定</div>
-        <div class="drag-item palette-l3" draggable="true" ondragstart="drag(event)" data-mode="locked3">3年固定</div>
-        <div class="drag-item palette-dis" draggable="true" ondragstart="drag(event)" data-mode="disabled">ゲスト（除外）</div>
-        <div class="drag-item palette-emp" draggable="true" ondragstart="drag(event)" data-mode="empty">空白（除外）</div>
+    <div class="setup-section">
+        <label for="rows">縦の列数:</label>
+        <input type="number" id="rows" min="1" max="10" value="5">
+        
+        <label for="cols" style="margin-left: 15px;">横の席数:</label>
+        <input type="number" id="cols" min="1" max="10" value="6">
+        
+        <button id="grid-update-btn" onclick="updateGridSize()">配置を変更</button>
     </div>
 
-    <div class="controls">
-        <button class="btn btn-shuffle" onclick="assignSeats()">残りの席をシャッフル</button>
-        <button class="btn btn-r1" onclick="selectImmediate(1)">1年生を選出</button>
-        <button class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
-        <button class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
-        <button class="btn btn-clear" onclick="resetAllSettings()">配置を完全初期化</button>
+    <div class="action-section">
+        <button onclick="drawSeat()">席を1つ選ぶ</button>
+        <button class="reset-btn" onclick="resetSelection()">履歴をリセット</button>
+        <div id="status-text" class="status-msg"></div>
     </div>
 
-    <div class="classroom">
-        <div class="row-front">
-            <div class="island">
-                <div id="seat-11" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 11)"><strong>11</strong><span class="status-label"></span></div>
-                <div id="seat-12" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 12)"><strong>12</strong><span class="status-label"></span></div>
-                <div id="seat-13" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 13)"><strong>13</strong><span class="status-label"></span></div>
-                <div id="seat-14" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 14)"><strong>14</strong><span class="status-label"></span></div>
-            </div>
-            <div class="island">
-                <div id="seat-21" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 21)"><strong>21</strong><span class="status-label"></span></div>
-                <div id="seat-22" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 22)"><strong>22</strong><span class="status-label"></span></div>
-                <div id="seat-23" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 23)"><strong>23</strong><span class="status-label"></span></div>
-                <div id="seat-24" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 24)"><strong>24</strong><span class="status-label"></span></div>
-            </div>
-            <div class="island">
-                <div id="seat-31" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 31)"><strong>31</strong><span class="status-label"></span></div>
-                <div id="seat-32" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 32)"><strong>32</strong><span class="status-label"></span></div>
-                <div id="seat-33" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 33)"><strong>33</strong><span class="status-label"></span></div>
-                <div id="seat-34" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 34)"><strong>34</strong><span class="status-label"></span></div>
-            </div>
-        </div>
-
-        <div class="row-back">
-            <div class="island">
-                <div id="seat-41" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 41)"><strong>41</strong><span class="status-label"></span></div>
-                <div id="seat-42" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 42)"><strong>42</strong><span class="status-label"></span></div>
-                <div id="seat-43" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 43)"><strong>43</strong><span class="status-label"></span></div>
-                <div id="seat-44" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 44)"><strong>44</strong><span class="status-label"></span></div>
-            </div>
-            <div class="island">
-                <div id="seat-51" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 51)"><strong>51</strong><span class="status-label"></span></div>
-                <div id="seat-52" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 52)"><strong>52</strong><span class="status-label"></span></div>
-                <div id="seat-53" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 53)"><strong>53</strong><span class="status-label"></span></div>
-                <div id="seat-54" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 54)"><strong>54</strong><span class="status-label"></span></div>
-            </div>
-            <div class="island">
-                <div id="seat-61" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 61)"><strong>61</strong><span class="status-label"></span></div>
-                <div id="seat-62" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 62)"><strong>62</strong><span class="status-label"></span></div>
-                <div id="seat-63" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 63)"><strong>63</strong><span class="status-label"></span></div>
-                <div id="seat-64" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 64)"><strong>64</strong><span class="status-label"></span></div>
-            </div>
-            <div class="island">
-                <div id="seat-71" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 71)"><strong>71</strong><span class="status-label"></span></div>
-                <div id="seat-72" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 72)"><strong>72</strong><span class="status-label"></span></div>
-                <div id="seat-73" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 73)"><strong>73</strong><span class="status-label"></span></div>
-                <div id="seat-74" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 74)"><strong>74</strong><span class="status-label"></span></div>
-            </div>
-        </div>
-    </div>
+    <div id="classroom-grid" class="classroom"></div>
+</div>
 
 <script>
-const seatLayout = [
-    { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null },
-    { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 13, island: 1, color: "white", mode: "normal", assignedGrade: null },
-    { id: 14, island: 1, color: "white", mode: "normal", assignedGrade: null },
-    { id: 21, island: 2, color: "white", mode: "normal", assignedGrade: null },
-    { id: 22, island: 2, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 23, island: 2, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 24, island: 2, color: "white", mode: "normal", assignedGrade: null },
-    { id: 31, island: 3, color: "white", mode: "normal", assignedGrade: null },
-    { id: 32, island: 3, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 33, island: 3, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 34, island: 3, color: "white", mode: "normal", assignedGrade: null },
-    { id: 41, island: 4, color: "white", mode: "normal", assignedGrade: null },
-    { id: 42, island: 4, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 43, island: 4, color: "white", mode: "normal", assignedGrade: null },
-    { id: 44, island: 4, color: "white", mode: "normal", assignedGrade: null },
-    { id: 51, island: 5, color: "white", mode: "normal", assignedGrade: null },
-    { id: 52, island: 5, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 53, island: 5, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 54, island: 5, color: "red", mode: "normal", assignedGrade: null },
-    { id: 61, island: 6, color: "white", mode: "normal", assignedGrade: null },
-    { id: 62, island: 6, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 63, island: 6, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 64, island: 6, color: "red", mode: "normal", assignedGrade: null },
-    { id: 71, island: 7, color: "white", mode: "normal", assignedGrade: null },
-    { id: 72, island: 7, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 73, island: 7, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
-];
+    // 状態管理変数
+    let totalRows = 5;
+    let totalCols = 6;
+    let selectedSeats = []; // 選ばれた座席のインデックス（0から始まる番号）を記録
 
-function drag(ev) {
-    ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
-}
+    // 画面起動時に保存されたデータを読み込む
+    window.onload = function() {
+        const savedRows = localStorage.getItem('seat_rows');
+        const savedCols = localStorage.getItem('seat_cols');
+        const savedSelected = localStorage.getItem('seat_selected_history');
 
-function allowDrop(ev) {
-    ev.preventDefault();
-}
+        if (savedRows) totalRows = parseInt(savedRows, 10);
+        if (savedCols) totalCols = parseInt(savedCols, 10);
+        if (savedSelected) selectedSeats = JSON.parse(savedSelected);
 
-function dragEnter(ev) {
-    ev.currentTarget.classList.add("drag-over");
-}
+        // 入力フォームに値をセット
+        document.getElementById('rows').value = totalRows;
+        document.getElementById('cols').value = totalCols;
 
-function dragLeave(ev) {
-    ev.currentTarget.classList.remove("drag-over");
-}
+        renderGrid();
+        updateStatusMessage();
+    };
 
-function drop(ev, seatId) {
-    ev.preventDefault();
-    ev.currentTarget.classList.remove("drag-over");
-
-    const mode = ev.dataTransfer.getData("text/plain");
-    const seat = seatLayout.find(s => s.id === seatId);
-    if (seat) {
-        seat.mode = mode;
-        assignSeats();
-    }
-}
-
-function assignSeats() {
-    for (let islandNum = 1; islandNum <= 7; islandNum++) {
-        const islandSeats = seatLayout.filter(s => s.island === islandNum);
-        const freeSeats = [];
-        let requiredGrades = [1, 2, 3];
-
-        islandSeats.forEach(seat => {
-            if (seat.mode === "disabled") {
-                seat.assignedGrade = "来賓";
-            } else if (seat.mode === "empty") {
-                seat.assignedGrade = "空白";
-            } else if (seat.mode === "locked1") {
-                seat.assignedGrade = 1;
-                requiredGrades = requiredGrades.filter(g => g !== 1);
-            } else if (seat.mode === "locked2") {
-                seat.assignedGrade = 2;
-                requiredGrades = requiredGrades.filter(g => g !== 2);
-            } else if (seat.mode === "locked3") {
-                seat.assignedGrade = 3;
-                requiredGrades = requiredGrades.filter(g => g !== 3);
-            } else {
-                seat.assignedGrade = null;
-                freeSeats.push(seat);
-            }
-        });
-
-        const shuffledFreeSeats = freeSeats.sort(() => Math.random() - 0.5);
-        shuffledFreeSeats.forEach(seat => {
-            if (requiredGrades.length > 0) {
-                seat.assignedGrade = requiredGrades.shift();
-            } else {
-                seat.assignedGrade = Math.floor(Math.random() * 3) + 1;
-            }
-        });
-    }
-    updateDOMDisplay();
-    saveToLocalStorage(); // 状態をブラウザに自動保存
-}
-
-function updateDOMDisplay() {
-    seatLayout.forEach(seat => {
-        const el = document.getElementById(`seat-${seat.id}`);
-        if (!el) return;
-
-        el.className = `seat color-${seat.color}`;
+    // グリッド（座席）を画面に描写する関数
+    function renderGrid() {
+        const gridContainer = document.getElementById('classroom-grid');
+        gridContainer.innerHTML = '';
         
-        if (seat.mode === "disabled" || seat.assignedGrade === "来賓") {
-            el.classList.add("bg-disabled");
-        } else if (seat.mode === "empty" || seat.assignedGrade === "空白") {
-            el.classList.add("bg-empty");
-        } else if (seat.assignedGrade === 1) {
-            el.classList.add("bg-grade1");
-        } else if (seat.assignedGrade === 2) {
-            el.classList.add("bg-grade2");
-        } else if (seat.assignedGrade === 3) {
-            el.classList.add("bg-grade3");
+        // CSS Gridの縦横を設定
+        gridContainer.style.gridTemplateRows = `repeat(${totalRows}, 1fr)`;
+        gridContainer.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
+
+        let seatIndex = 1;
+        for (let r = 0; r < totalRows; r++) {
+            for (let c = 0; c < totalCols; c++) {
+                const seatDiv = document.createElement('div');
+                seatDiv.classList.add('seat');
+                seatDiv.innerText = seatIndex;
+                seatDiv.setAttribute('data-index', seatIndex);
+
+                // すでに選ばれている座席なら色をつける
+                if (selectedSeats.includes(seatIndex)) {
+                    seatDiv.classList.add('selected');
+                }
+
+                gridContainer.appendChild(seatDiv);
+                seatIndex++;
+            }
+        }
+    }
+
+    // 配置サイズが変更されたときの処理
+    function updateGridSize() {
+        const rInput = parseInt(document.getElementById('rows').value, 10);
+        const cInput = parseInt(document.getElementById('cols').value, 10);
+
+        if (isNaN(rInput) || rInput < 1 || isNaN(cInput) || cInput < 1) {
+            alert('1以上の正しい数値を入力してください。');
+            return;
         }
 
-        if (seat.mode === "locked1") el.classList.add("mode-locked1");
-        if (seat.mode === "locked2") el.classList.add("mode-locked2");
-        if (seat.mode === "locked3") el.classList.add("mode-locked3");
-        if (seat.mode === "empty") el.classList.add("mode-empty");
+        totalRows = rInput;
+        totalCols = cInput;
+        
+        // サイズが変わったら選ばれていた履歴は一度クリアする
+        selectedSeats = [];
+        
+        saveToLocalStorage();
+        renderGrid();
+        updateStatusMessage();
+    }
 
-        const labelEl = el.querySelector(".status-label");
-        if (labelEl) {
-            let labelText = "";
-            if (seat.mode === "disabled") {
-                labelText = "来賓";
-            } else if (seat.mode === "empty") {
-                labelText = "空白";
-            } else {
-                labelText = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
-                if (seat.mode.startsWith("locked")) labelText += " (固)";
-            }
-            labelEl.textContent = labelText;
+    // ランダムに1つ席を選ぶ関数（重複防止機能付き）
+    function drawSeat() {
+        const totalSeatsCount = totalRows * totalCols;
+
+        // すべての席が選ばれ尽くしているかチェック
+        if (selectedSeats.length >= totalSeatsCount) {
+            document.getElementById('status-text').innerText = 'すべての座席が選択されました！これ以上選べません。';
+            return;
         }
-    });
-}
 
-function selectImmediate(targetGrade) {
-    document.querySelectorAll('.seat').forEach(el => el.classList.remove('selected'));
-    const targetSeats = seatLayout.filter(s => s.assignedGrade === targetGrade && s.mode !== "disabled" && s.mode !== "empty").map(s => s.id);
-    if (targetSeats.length === 0) {
-        alert(`${targetGrade}年生の席がありません。`);
-        return;
-    }
-    const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
-    document.getElementById(`seat-${finalSeatId}`).classList.add('selected');
-}
-
-// 【新規追加】ブラウザのlocalStorageにデータを保存する
-function saveToLocalStorage() {
-    localStorage.setItem('classroom_seat_layout', JSON.stringify(seatLayout));
-}
-
-// 【新規追加】ページ読み込み時にデータを復元する
-function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('classroom_seat_layout');
-    if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        parsedData.forEach(savedSeat => {
-            const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
-            if (currentSeat) {
-                currentSeat.mode = savedSeat.mode;
-                currentSeat.assignedGrade = savedSeat.assignedGrade;
+        // まだ選ばれていない座席の番号リストを作成
+        let availableSeats = [];
+        for (let i = 1; i <= totalSeatsCount; i++) {
+            if (!selectedSeats.includes(i)) {
+                availableSeats.push(i);
             }
-        });
-        updateDOMDisplay();
-    } else {
-        assignSeats();
-    }
-}
+        }
 
-// 【新規追加】クリアボタン用：全設定を消去して初期状態にする
-function resetAllSettings() {
-    if(confirm("すべての固定設定や空白設定をリセットして初期化しますか？")) {
-        localStorage.removeItem('classroom_seat_layout');
-        seatLayout.forEach(seat => {
-            seat.mode = "normal";
-            seat.assignedGrade = null;
-        });
-        document.querySelectorAll('.seat').forEach(el => el.classList.remove('selected'));
-        assignSeats();
-    }
-}
+        // 残っている座席の中からランダムに1つ決定
+        const randomIndex = Math.floor(Math.random() * availableSeats.length);
+        const chosenSeatNumber = availableSeats[randomIndex];
 
-// 起動時にロード処理を走らせる
-loadFromLocalStorage();
+        // 履歴に追加して保存
+        selectedSeats.push(chosenSeatNumber);
+        saveToLocalStorage();
+
+        // 画面にアニメーション付きで反映
+        renderGrid();
+        updateStatusMessage();
+
+        // 今回選ばれた番号を強調表示
+        document.getElementById('status-text').innerHTML = `結果: <strong style="color: #34d399; font-size: 18px;">${chosenSeatNumber}番</strong> が選ばれました！`;
+    }
+
+    // 選ばれた履歴をクリアする関数（リセットボタン用）
+    function resetSelection() {
+        if (confirm('これまでの座席選択の履歴をすべてリセットしますか？')) {
+            selectedSeats = [];
+            saveToLocalStorage();
+            renderGrid();
+            document.getElementById('status-text').innerText = '履歴をリセットしました。';
+        }
+    }
+
+    // データの保存処理
+    function saveToLocalStorage() {
+        localStorage.setItem('seat_rows', totalRows);
+        localStorage.setItem('seat_cols', totalCols);
+        localStorage.setItem('seat_selected_history', JSON.stringify(selectedSeats));
+    }
+
+    // 現在の残り席数などのステータス表示を更新
+    function updateStatusMessage() {
+        const total = totalRows * totalCols;
+        const remaining = total - selectedSeats.length;
+        if (selectedSeats.length === 0) {
+            document.getElementById('status-text').innerText = `全 ${total} 席（未選択: ${remaining} 席）`;
+        } else if (remaining === 0) {
+            document.getElementById('status-text').innerText = 'すべての座席が選択されました！';
+        } else {
+            // 直近に選ばれたものを表示
+            const lastChosen = selectedSeats[selectedSeats.length - 1];
+            document.getElementById('status-text').innerHTML = `前回: ${lastChosen}番 / 残り: ${remaining} 席`;
+        }
+    }
 </script>
+
 </body>
 </html>
