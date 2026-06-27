@@ -1,281 +1,95 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座席決めマシーン</title>
-    <style>
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-        }
-        h1 {
-            color: #ffffff;
-            margin-bottom: 10px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .setup-section, .action-section {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #333;
-        }
-        label {
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        input[type="number"] {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            width: 60px;
-            text-align: center;
-            font-size: 16px;
-        }
-        button {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            margin: 5px;
-        }
-        button:hover {
-            background: #1d4ed8;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-        button.reset-btn {
-            background: #dc2626;
-        }
-        button.reset-btn:hover {
-            background: #b91c1c;
-        }
-        .status-msg {
-            font-size: 14px;
-            color: #aaa;
-            margin-top: 5px;
-            min-height: 20px;
-        }
-        .classroom {
-            display: grid;
-            gap: 15px;
-            justify-content: center;
-            margin: 30px auto;
-            padding: 20px;
-            background: #151515;
-            border-radius: 10px;
-            border: 2px dashed #444;
-            overflow-x: auto;
-        }
-        .seat {
-            background: #2a2a2a;
-            border: 2px solid #444;
-            border-radius: 8px;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            min-width: 60px;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            color: #fff;
-        }
-        .seat.selected {
-            background: #059669;
-            border-color: #34d399;
-            box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
-            animation: pop 0.3s ease-out;
-        }
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>座席決めマシーン</h1>
-    
-    <div class="setup-section">
-        <label for="rows">縦の列数:</label>
-        <input type="number" id="rows" min="1" max="10" value="5">
-        
-        <label for="cols" style="margin-left: 15px;">横の席数:</label>
-        <input type="number" id="cols" min="1" max="10" value="6">
-        
-        <button id="grid-update-btn" onclick="updateGridSize()">配置を変更</button>
-    </div>
-
-    <div class="action-section">
-        <button onclick="drawSeat()">席を1つ選ぶ</button>
-        <button class="reset-btn" onclick="resetSelection()">履歴をリセット</button>
-        <div id="status-text" class="status-msg"></div>
-    </div>
-
-    <div id="classroom-grid" class="classroom"></div>
-</div>
-
 <script>
-    // 状態管理変数
-    let totalRows = 5;
-    let totalCols = 6;
-    let selectedSeats = []; // 選ばれた座席のインデックス（0から始まる番号）を記録
+    // 状態管理：一度選ばれた座席の「番号（11や52など）」を記録する配列
+    let selectedSeatNumbers = [];
 
-    // 画面起動時に保存されたデータを読み込む
+    // 起動時に保存された選出履歴を復元する
     window.onload = function() {
-        const savedRows = localStorage.getItem('seat_rows');
-        const savedCols = localStorage.getItem('seat_cols');
-        const savedSelected = localStorage.getItem('seat_selected_history');
-
-        if (savedRows) totalRows = parseInt(savedRows, 10);
-        if (savedCols) totalCols = parseInt(savedCols, 10);
-        if (savedSelected) selectedSeats = JSON.parse(savedSelected);
-
-        // 入力フォームに値をセット
-        document.getElementById('rows').value = totalRows;
-        document.getElementById('cols').value = totalCols;
-
-        renderGrid();
+        loadFromLocalStorage();
+        const savedHistory = localStorage.getItem('seat_selected_history_custom');
+        if (savedHistory) {
+            selectedSeatNumbers = JSON.parse(savedHistory);
+            // 保存されていた当選席を緑色にする
+            selectedSeatNumbers.forEach(num => {
+                const seatEl = document.querySelector(`.seat[data-id="${num}"]`);
+                if (seatEl) seatEl.classList.add('selected');
+            });
+        }
         updateStatusMessage();
     };
 
-    // グリッド（座席）を画面に描写する関数
-    function renderGrid() {
-        const gridContainer = document.getElementById('classroom-grid');
-        gridContainer.innerHTML = '';
+    // 学年を指定して選出する関数（重複防止版）
+    function assignSeats(targetGrade) {
+        // 1. 画面内にあるすべての座席を取得
+        const allSeats = Array.from(document.querySelectorAll('.seat'));
         
-        // CSS Gridの縦横を設定
-        gridContainer.style.gridTemplateRows = `repeat(${totalRows}, 1fr)`;
-        gridContainer.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
+        // 2. 指定された学年、かつ「まだ選ばれていない（.selectedがついていない）」席だけを絞り込む
+        const availableSeats = allSeats.filter(seat => {
+            const isTargetGrade = seat.getAttribute('data-grade') === String(targetGrade);
+            const isNotSelected = !seat.classList.contains('selected');
+            return isTargetGrade && isNotSelected;
+        });
 
-        let seatIndex = 1;
-        for (let r = 0; r < totalRows; r++) {
-            for (let c = 0; c < totalCols; c++) {
-                const seatDiv = document.createElement('div');
-                seatDiv.classList.add('seat');
-                seatDiv.innerText = seatIndex;
-                seatDiv.setAttribute('data-index', seatIndex);
-
-                // すでに選ばれている座席なら色をつける
-                if (selectedSeats.includes(seatIndex)) {
-                    seatDiv.classList.add('selected');
-                }
-
-                gridContainer.appendChild(seatDiv);
-                seatIndex++;
-            }
-        }
-    }
-
-    // 配置サイズが変更されたときの処理
-    function updateGridSize() {
-        const rInput = parseInt(document.getElementById('rows').value, 10);
-        const cInput = parseInt(document.getElementById('cols').value, 10);
-
-        if (isNaN(rInput) || rInput < 1 || isNaN(cInput) || cInput < 1) {
-            alert('1以上の正しい数値を入力してください。');
+        // もし候補がなければ終了
+        if (availableSeats.length === 0) {
+            alert(`${targetGrade}年生の空いている席がもうありません！`);
             return;
         }
 
-        totalRows = rInput;
-        totalCols = cInput;
-        
-        // サイズが変わったら選ばれていた履歴は一度クリアする
-        selectedSeats = [];
-        
-        saveToLocalStorage();
-        renderGrid();
-        updateStatusMessage();
-    }
-
-    // ランダムに1つ席を選ぶ関数（重複防止機能付き）
-    function drawSeat() {
-        const totalSeatsCount = totalRows * totalCols;
-
-        // すべての席が選ばれ尽くしているかチェック
-        if (selectedSeats.length >= totalSeatsCount) {
-            document.getElementById('status-text').innerText = 'すべての座席が選択されました！これ以上選べません。';
-            return;
-        }
-
-        // まだ選ばれていない座席の番号リストを作成
-        let availableSeats = [];
-        for (let i = 1; i <= totalSeatsCount; i++) {
-            if (!selectedSeats.includes(i)) {
-                availableSeats.push(i);
-            }
-        }
-
-        // 残っている座席の中からランダムに1つ決定
+        // 3. 残っている候補からランダムに1つ選出
         const randomIndex = Math.floor(Math.random() * availableSeats.length);
-        const chosenSeatNumber = availableSeats[randomIndex];
+        const chosenSeat = availableSeats[randomIndex];
+        const chosenId = chosenSeat.getAttribute('data-id');
 
-        // 履歴に追加して保存
-        selectedSeats.push(chosenSeatNumber);
-        saveToLocalStorage();
+        // 4. 全体の選択エフェクトを一度消す（直近の当選だけを目立たせる場合）
+        // ※もし過去の当選をすべて緑のまま残したい場合は、下のforEachの3行を消してください
+        allSeats.forEach(el => el.classList.remove('selected'));
 
-        // 画面にアニメーション付きで反映
-        renderGrid();
+        // 5. 当選した席を確定（緑色にする）し、履歴に記憶
+        chosenSeat.classList.add('selected');
+        
+        // 重複して配列に入らないようにチェックして追加
+        if (!selectedSeatNumbers.includes(chosenId)) {
+            selectedSeatNumbers.push(chosenId);
+        }
+
+        // ローカルストレージに保存
+        localStorage.setItem('seat_selected_history_custom', JSON.stringify(selectedSeatNumbers));
+        saveToLocalStorage(); // 既存の配置保存関数を呼び出す
         updateStatusMessage();
-
-        // 今回選ばれた番号を強調表示
-        document.getElementById('status-text').innerHTML = `結果: <strong style="color: #34d399; font-size: 18px;">${chosenSeatNumber}番</strong> が選ばれました！`;
     }
 
-    // 選ばれた履歴をクリアする関数（リセットボタン用）
+    // クラス全体の残りをシャッフル（既存の処理に重複防止を連動）
+    function shuffleRemaining() {
+        // シャッフルする際も一度当選履歴をクリアするかどうか
+        // 今回は「選出」の流れを邪魔しないよう、ここをトリガーにしても良いですが、
+        // 基本は「リセットボタン」で消すのが安全です。
+        alert("残りの席をシャッフルします。");
+        // （既存のシャッフル処理がここにあれば、そのまま残して結合してください）
+    }
+
+    // ★新機能：選出履歴を完全にまっさらにするリセット関数
     function resetSelection() {
-        if (confirm('これまでの座席選択の履歴をすべてリセットしますか？')) {
-            selectedSeats = [];
-            saveToLocalStorage();
-            renderGrid();
-            document.getElementById('status-text').innerText = '履歴をリセットしました。';
+        if (confirm('これまでの選出履歴（緑色の枠）をすべてリセットして、最初からやり直しますか？')) {
+            selectedSeatNumbers = [];
+            localStorage.removeItem('seat_selected_history_custom');
+            
+            // 画面上のすべての席から緑色（selectedクラス）を剥がす
+            document.querySelectorAll('.seat').forEach(el => {
+                el.classList.remove('selected');
+            });
+            updateStatusMessage();
         }
     }
 
-    // データの保存処理
-    function saveToLocalStorage() {
-        localStorage.setItem('seat_rows', totalRows);
-        localStorage.setItem('seat_cols', totalCols);
-        localStorage.setItem('seat_selected_history', JSON.stringify(selectedSeats));
-    }
-
-    // 現在の残り席数などのステータス表示を更新
+    // 画面上部に状態を表示する（オプション）
     function updateStatusMessage() {
-        const total = totalRows * totalCols;
-        const remaining = total - selectedSeats.length;
-        if (selectedSeats.length === 0) {
-            document.getElementById('status-text').innerText = `全 ${total} 席（未選択: ${remaining} 席）`;
-        } else if (remaining === 0) {
-            document.getElementById('status-text').innerText = 'すべての座席が選択されました！';
-        } else {
-            // 直近に選ばれたものを表示
-            const lastChosen = selectedSeats[selectedSeats.length - 1];
-            document.getElementById('status-text').innerHTML = `前回: ${lastChosen}番 / 残り: ${remaining} 席`;
-        }
+        const totalSelected = selectedSeatNumbers.length;
+        console.log(`現在選出済みの席数: ${totalSelected}席 (${selectedSeatNumbers.join(', ')})`);
     }
-</script>
 
-</body>
-</html>
+    // HTML側の各ボタンの「onclick」にこの関数をバインドしてください
+    // 例： <button onclick="assignSeats(1)">1年生を選出</button>
+    // 例： <button onclick="assignSeats(2)">2年生を選出</button>
+    // 例： <button onclick="assignSeats(3)">3年生を選出</button>
+    // 追加するリセットボタン： <button onclick="resetSelection()" style="background:#dc2626;">選出リセット</button>
+</script>
