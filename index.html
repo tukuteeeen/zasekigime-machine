@@ -1,95 +1,264 @@
-<script>
-    // 状態管理：一度選ばれた座席の「番号（11や52など）」を記録する配列
-    let selectedSeatNumbers = [];
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ドラッグ＆ドロップ座席カスタマイザー</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .monitor {
+            background-color: #bfdbfe;
+            border: 2px solid #000;
+            width: 250px;
+            margin: 0 auto 20px auto;
+            padding: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .palette, .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: 1px solid #000;
+            padding: 6px 12px;
+            background-color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .btn-1year { color: #2563eb; border-color: #2563eb; }
+        .btn-2year { color: #d97706; border-color: #d97706; }
+        .btn-3year { color: #dc2626; border-color: #dc2626; }
+        .btn-guest { background-color: #4b5563; color: #fff; }
+        .btn-blank { border: 1px dashed #4b5563; color: #4b5563; }
+        
+        .action-btn {
+            border: 2px solid #000;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            background-color: #e5e7eb;
+        }
+        .action-btn.blue { background-color: #3b82f6; color: #fff; }
+        .action-btn.yellow { background-color: #f59e0b; color: #fff; }
+        .action-btn.red { background-color: #ef4444; color: #fff; }
+        .action-btn.reset-selection { background-color: #7c3aed; color: #fff; } /* 選出リセット用（紫） */
 
-    // 起動時に保存された選出履歴を復元する
+        .grid-container {
+            max-width: 900px;
+            margin: 30px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        .row-block {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .desk-block {
+            border: 2px solid #000;
+            background-color: #fff;
+            padding: 5px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+        }
+        .seat {
+            border: 1px solid #ccc;
+            width: 70px;
+            height: 55px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+            box-sizing: border-box;
+            font-size: 12px;
+            cursor: grab;
+            position: relative;
+            background-color: #fff;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .seat .seat-id {
+            font-weight: bold;
+        }
+        .seat .seat-grade {
+            font-size: 10px;
+            align-self: center;
+            color: #4b5563;
+        }
+        
+        /* 学年ごとの左ボーダー色（画像のデザインを再現） */
+        .seat[data-grade="1"] { border-left: 4px solid #3b82f6; }
+        .seat[data-grade="2"] { border-left: 4px solid #f59e0b; }
+        .seat[data-grade="3"] { border-left: 4px solid #ef4444; }
+        .seat[data-grade="3"][data-special="true"] { border-left: 4px solid #ef4444; background-color: #fee2e2; }
+        .seat[data-grade="guest"] { background-color: #e5e7eb; color: #9ca3af; border-left: 1px solid #ccc; }
+        .seat[data-grade="blank"] { border: 1px dashed #9ca3af; background-color: #f9fafb; color: #9ca3af; }
+
+        /* 選出された時の緑色エフェクト */
+        .seat.selected {
+            background-color: #10b981 !important;
+            color: #fff !important;
+            box-shadow: 0 0 12px #10b981;
+            border-color: #059669 !important;
+        }
+        .seat.selected .seat-grade {
+            color: #fff !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="monitor">モニター</div>
+
+    <div class="palette">
+        <button class="btn">通常席に戻す</button>
+        <button class="btn btn-1year">1年固定</button>
+        <button class="btn btn-2year">2年固定</button>
+        <button class="btn btn-3year">3年固定</button>
+        <button class="btn btn-guest">ゲスト (除外)</button>
+        <button class="btn btn-blank">空白 (除外)</button>
+    </div>
+
+    <div class="controls">
+        <button class="action-btn" onclick="shuffleRemaining()">残りの席をシャッフル</button>
+        <button class="action-btn blue" onclick="assignGrade(1)">1年生を選出</button>
+        <button class="action-btn yellow" onclick="assignGrade(2)">2年生を選出</button>
+        <button class="action-btn red" onclick="assignGrade(3)">3年生を選出</button>
+        <button class="action-btn reset-selection" onclick="resetAllSelection()">選出履歴をリセット</button>
+        <button class="action-btn red">配置を完全初期化</button>
+    </div>
+
+    <div class="grid-container">
+        <div class="row-block">
+            <div class="desk-block">
+                <div class="seat" data-id="11" data-grade="1"><span class="seat-id">11</span><span class="seat-grade">1年</span></div>
+                <div class="seat" data-id="12" data-grade="3"><span class="seat-id">12</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="13" data-grade="3"><span class="seat-id">13</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="14" data-grade="2"><span class="seat-id">14</span><span class="seat-grade">2年</span></div>
+            </div>
+            <div class="desk-block">
+                <div class="seat" data-id="21" data-grade="3" data-special="true"><span class="seat-id">21</span><span class="seat-grade">3年 (固)</span></div>
+                <div class="seat" data-id="22" data-grade="2"><span class="seat-id">22</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="23" data-grade="1"><span class="seat-id">23</span><span class="seat-grade">1年</span></div>
+                <div class="seat" data-id="24" data-grade="blank"><span class="seat-id">24</span><span class="seat-grade">空白</span></div>
+            </div>
+            <div class="desk-block">
+                <div class="seat" data-id="31" data-grade="3"><span class="seat-id">31</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="32" data-grade="1"><span class="seat-id">32</span><span class="seat-grade">1年</span></div>
+                <div class="seat" data-id="33" data-grade="2"><span class="seat-id">33</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="34" data-grade="2"><span class="seat-id">34</span><span class="seat-grade">2年</span></div>
+            </div>
+        </div>
+
+        <div class="row-block">
+            <div class="desk-block">
+                <div class="seat" data-id="41" data-grade="3"><span class="seat-id">41</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="42" data-grade="3"><span class="seat-id">42</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="43" data-grade="2"><span class="seat-id">43</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="44" data-grade="1"><span class="seat-id">44</span><span class="seat-grade">1年</span></div>
+            </div>
+            <div class="desk-block">
+                <div class="seat" data-id="51" data-grade="2"><span class="seat-id">51</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="52" data-grade="1"><span class="seat-id">52</span><span class="seat-grade">1年</span></div>
+                <div class="seat" data-id="53" data-grade="2"><span class="seat-id">53</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="54" data-grade="3"><span class="seat-id">54</span><span class="seat-grade">3年</span></div>
+            </div>
+            <div class="desk-block">
+                <div class="seat" data-id="61" data-grade="3"><span class="seat-id">61</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="62" data-grade="1"><span class="seat-id">62</span><span class="seat-grade">1年</span></div>
+                <div class="seat" data-id="63" data-grade="2"><span class="seat-id">63</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="64" data-grade="2"><span class="seat-id">64</span><span class="seat-grade">2年</span></div>
+            </div>
+            <div class="desk-block">
+                <div class="seat" data-id="71" data-grade="2"><span class="seat-id">71</span><span class="seat-grade">2年</span></div>
+                <div class="seat" data-id="72" data-grade="1"><span class="seat-id">72</span><span class="seat-grade">1年</span></div>
+                <div class="seat" data-id="73" data-grade="3"><span class="seat-id">73</span><span class="seat-grade">3年</span></div>
+                <div class="seat" data-id="74" data-grade="3"><span class="seat-id">74</span><span class="seat-grade">3年</span></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 【状態管理】選出された座席のIDを記録する配列（重複防止と自動保存用）
+    let selectedSeatIds = [];
+
     window.onload = function() {
-        loadFromLocalStorage();
-        const savedHistory = localStorage.getItem('seat_selected_history_custom');
+        // ページ読み込み時に過去の選出履歴があれば復元する
+        const savedHistory = localStorage.getItem('custom_selected_history');
         if (savedHistory) {
-            selectedSeatNumbers = JSON.parse(savedHistory);
-            // 保存されていた当選席を緑色にする
-            selectedSeatNumbers.forEach(num => {
-                const seatEl = document.querySelector(`.seat[data-id="${num}"]`);
+            selectedSeatIds = JSON.parse(savedHistory);
+            selectedSeatIds.forEach(id => {
+                const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
                 if (seatEl) seatEl.classList.add('selected');
             });
         }
-        updateStatusMessage();
     };
 
-    // 学年を指定して選出する関数（重複防止版）
-    function assignSeats(targetGrade) {
-        // 1. 画面内にあるすべての座席を取得
+    // 【コア機能】指定された学年の席を重複なしでランダムに選出する
+    function assignGrade(targetGrade) {
         const allSeats = Array.from(document.querySelectorAll('.seat'));
         
-        // 2. 指定された学年、かつ「まだ選ばれていない（.selectedがついていない）」席だけを絞り込む
+        // 候補のフィルタリング：指定した学年 ＆ まだ選ばれていない（selectedクラスを持たない）
         const availableSeats = allSeats.filter(seat => {
-            const isTargetGrade = seat.getAttribute('data-grade') === String(targetGrade);
+            const currentGrade = seat.getAttribute('data-grade');
             const isNotSelected = !seat.classList.contains('selected');
-            return isTargetGrade && isNotSelected;
+            return currentGrade === String(targetGrade) && isNotSelected;
         });
 
-        // もし候補がなければ終了
         if (availableSeats.length === 0) {
-            alert(`${targetGrade}年生の空いている席がもうありません！`);
+            alert(`${targetGrade}年生の空いている席はもうありません！`);
             return;
         }
 
-        // 3. 残っている候補からランダムに1つ選出
+        // 残った候補からランダムに1つ選出
         const randomIndex = Math.floor(Math.random() * availableSeats.length);
         const chosenSeat = availableSeats[randomIndex];
         const chosenId = chosenSeat.getAttribute('data-id');
 
-        // 4. 全体の選択エフェクトを一度消す（直近の当選だけを目立たせる場合）
-        // ※もし過去の当選をすべて緑のまま残したい場合は、下のforEachの3行を消してください
-        allSeats.forEach(el => el.classList.remove('selected'));
-
-        // 5. 当選した席を確定（緑色にする）し、履歴に記憶
+        // 直前に選ばれたエフェクトを目立たせるため、今回は毎回リセットせず、
+        // 「すべての当選席を維持して重複を防ぐ」仕様にしています。
+        // （もし1つだけを緑にしたい場合は、ここで他のselectedを外す処理を入れます）
         chosenSeat.classList.add('selected');
         
-        // 重複して配列に入らないようにチェックして追加
-        if (!selectedSeatNumbers.includes(chosenId)) {
-            selectedSeatNumbers.push(chosenId);
+        // 配列にIDを記録してローカルストレージに保存
+        if (!selectedSeatIds.includes(chosenId)) {
+            selectedSeatIds.push(chosenId);
         }
-
-        // ローカルストレージに保存
-        localStorage.setItem('seat_selected_history_custom', JSON.stringify(selectedSeatNumbers));
-        saveToLocalStorage(); // 既存の配置保存関数を呼び出す
-        updateStatusMessage();
+        localStorage.setItem('custom_selected_history', JSON.stringify(selectedSeatIds));
     }
 
-    // クラス全体の残りをシャッフル（既存の処理に重複防止を連動）
-    function shuffleRemaining() {
-        // シャッフルする際も一度当選履歴をクリアするかどうか
-        // 今回は「選出」の流れを邪魔しないよう、ここをトリガーにしても良いですが、
-        // 基本は「リセットボタン」で消すのが安全です。
-        alert("残りの席をシャッフルします。");
-        // （既存のシャッフル処理がここにあれば、そのまま残して結合してください）
-    }
-
-    // ★新機能：選出履歴を完全にまっさらにするリセット関数
-    function resetSelection() {
-        if (confirm('これまでの選出履歴（緑色の枠）をすべてリセットして、最初からやり直しますか？')) {
-            selectedSeatNumbers = [];
-            localStorage.removeItem('seat_selected_history_custom');
+    // 【新機能】すべての緑色（選出状態）をまっさらに戻すリセット関数
+    function resetAllSelection() {
+        if (confirm('これまでの選出履歴（緑色の枠）をすべてリセットして最初からやり直しますか？')) {
+            selectedSeatIds = [];
+            localStorage.removeItem('custom_selected_history');
             
-            // 画面上のすべての席から緑色（selectedクラス）を剥がす
-            document.querySelectorAll('.seat').forEach(el => {
-                el.classList.remove('selected');
+            document.querySelectorAll('.seat').forEach(seat => {
+                seat.classList.remove('selected');
             });
-            updateStatusMessage();
         }
     }
 
-    // 画面上部に状態を表示する（オプション）
-    function updateStatusMessage() {
-        const totalSelected = selectedSeatNumbers.length;
-        console.log(`現在選出済みの席数: ${totalSelected}席 (${selectedSeatNumbers.join(', ')})`);
+    // ダミーのシャッフル関数（既存のコードに合わせて適宜統合してください）
+    function shuffleRemaining() {
+        alert("残りの席をシャッフルします。");
     }
-
-    // HTML側の各ボタンの「onclick」にこの関数をバインドしてください
-    // 例： <button onclick="assignSeats(1)">1年生を選出</button>
-    // 例： <button onclick="assignSeats(2)">2年生を選出</button>
-    // 例： <button onclick="assignSeats(3)">3年生を選出</button>
-    // 追加するリセットボタン： <button onclick="resetSelection()" style="background:#dc2626;">選出リセット</button>
 </script>
+
+</body>
+</html>
