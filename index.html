@@ -165,7 +165,7 @@ const seatLayout = [
     { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
 ];
 
-// パスワード設定（必要に応じて変更してください）
+// パスワード（必要に応じて変更可能）
 const CORRECT_PASSWORD = "1234";
 
 // 重複除外のための過去履歴
@@ -191,19 +191,33 @@ function dragLeave(ev) {
     ev.currentTarget.classList.remove("drag-over");
 }
 
+// ドロップ時の処理
 function drop(ev, seatId) {
     ev.preventDefault();
     ev.currentTarget.classList.remove("drag-over");
 
     const mode = ev.dataTransfer.getData("text/plain");
     const seat = seatLayout.find(s => s.id === seatId);
+    
     if (seat) {
         seat.mode = mode;
-        // 通常席に戻す（normal）対応
+        // モード変更時に学年割当をリセット（通常席、または除外等に合わせるため）
         if (mode === "normal") {
             seat.assignedGrade = null;
+        } else if (mode === "disabled") {
+            seat.assignedGrade = "来賓";
+        } else if (mode === "empty") {
+            seat.assignedGrade = "空白";
+        } else if (mode === "locked1") {
+            seat.assignedGrade = 1;
+        } else if (mode === "locked2") {
+            seat.assignedGrade = 2;
+        } else if (mode === "locked3") {
+            seat.assignedGrade = 3;
         }
-        assignSeats();
+        
+        // パレットをドロップしたときは、残りの席だけを再計算して画面更新
+        assignSeats(false); 
     }
 }
 
@@ -211,20 +225,22 @@ function drop(ev, seatId) {
 function assignSeatsWithAuth() {
     const password = prompt("管理者パスワードを入力してください：");
     if (password === CORRECT_PASSWORD) {
-        // シャッフルされたら現在の単一光り（緑）は次の処理が始まるため解除
+        // 新しくシャッフルするときは現在の単一光り（緑）を解除
         currentlySelectedSeatId = null;
-        assignSeats();
+        assignSeats(true); // 強制リシャッフル
     } else {
         alert("パスワードが違います。アクセスが拒否されました。");
     }
 }
 
-function assignSeats() {
+// 座席の自動配置ロジック（isShuffle=trueの時だけ通常席の配置を完全にリセット）
+function assignSeats(isShuffle = true) {
     for (let islandNum = 1; islandNum <= 7; islandNum++) {
         const islandSeats = seatLayout.filter(s => s.island === islandNum);
         const freeSeats = [];
         let requiredGrades = [1, 2, 3];
 
+        // 1周目：固定設定や除外設定の確認・必要学年の抽出
         islandSeats.forEach(seat => {
             if (seat.mode === "disabled") {
                 seat.assignedGrade = "来賓";
@@ -240,19 +256,25 @@ function assignSeats() {
                 seat.assignedGrade = 3;
                 requiredGrades = requiredGrades.filter(g => g !== 3);
             } else {
-                seat.assignedGrade = null;
+                // 通常席（normal）の場合
+                if (isShuffle) {
+                    seat.assignedGrade = null; // ボタンでのシャッフル時は完全にクリア
+                }
                 freeSeats.push(seat);
             }
         });
 
-        const shuffledFreeSeats = freeSeats.sort(() => Math.random() - 0.5);
-        shuffledFreeSeats.forEach(seat => {
-            if (requiredGrades.length > 0) {
-                seat.assignedGrade = requiredGrades.shift();
-            } else {
-                seat.assignedGrade = Math.floor(Math.random() * 3) + 1;
-            }
-        });
+        // シャッフル時、または通常席にまだ何も割り当てられていない場合のみランダム配置を実行
+        if (isShuffle || freeSeats.some(s => s.assignedGrade === null)) {
+            const shuffledFreeSeats = freeSeats.sort(() => Math.random() - 0.5);
+            shuffledFreeSeats.forEach(seat => {
+                if (requiredGrades.length > 0) {
+                    seat.assignedGrade = requiredGrades.shift();
+                } else {
+                    seat.assignedGrade = Math.floor(Math.random() * 3) + 1;
+                }
+            });
+        }
     }
     updateDOMDisplay();
     saveToLocalStorage();
@@ -263,11 +285,13 @@ function updateDOMDisplay() {
         const el = document.getElementById(`seat-${seat.id}`);
         if (!el) return;
 
+        // クラス初期化
         el.className = `seat color-${seat.color}`;
         
-        if (seat.mode === "disabled" || seat.assignedGrade === "来賓") {
+        // 背景色の割り当て
+        if (seat.assignedGrade === "来賓") {
             el.classList.add("bg-disabled");
-        } else if (seat.mode === "empty" || seat.assignedGrade === "空白") {
+        } else if (seat.assignedGrade === "空白") {
             el.classList.add("bg-empty");
         } else if (seat.assignedGrade === 1) {
             el.classList.add("bg-grade1");
@@ -277,6 +301,7 @@ function updateDOMDisplay() {
             el.classList.add("bg-grade3");
         }
 
+        // ボーダー（固定状態の見た目）の割り当て
         if (seat.mode === "locked1") el.classList.add("mode-locked1");
         if (seat.mode === "locked2") el.classList.add("mode-locked2");
         if (seat.mode === "locked3") el.classList.add("mode-locked3");
@@ -292,6 +317,7 @@ function updateDOMDisplay() {
             el.classList.add("selected");
         }
 
+        // ラベルテキストの更新
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
             let labelText = "";
@@ -332,7 +358,6 @@ function selectImmediate(targetGrade) {
     let elapsed = 0;
 
     const timer = setInterval(() => {
-        // 候補の中からランダムに黄色く光らせる（ドラムロール演出）
         const randomSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
         rouletteActiveSeatId = randomSeatId;
         updateDOMDisplay();
@@ -340,7 +365,7 @@ function selectImmediate(targetGrade) {
         elapsed += intervalTime;
         if (elapsed >= duration) {
             clearInterval(timer);
-            rouletteActiveSeatId = null; // 演出用光りを消去
+            rouletteActiveSeatId = null; 
 
             // 最終決定
             const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
@@ -349,12 +374,11 @@ function selectImmediate(targetGrade) {
 
             updateDOMDisplay();
             saveToLocalStorage();
-            setButtonsDisabled(false); // 連打制限解除：ボタンを再度有効化
+            setButtonsDisabled(false); // 連打制限解除：ボタンを有効化
         }
     }, intervalTime);
 }
 
-// ボタンの無効・有効化切り替え（連打防止用）
 function setButtonsDisabled(disabled) {
     document.getElementById("btn-shuffle").disabled = disabled;
     document.getElementById("btn-r1").disabled = disabled;
@@ -378,7 +402,7 @@ function clearSelectionHistory() {
 function resetAllSettingsWithAuth() {
     const password = prompt("初期化するには管理者パスワードを入力してください：");
     if (password === CORRECT_PASSWORD) {
-        localStorage.removeItem('classroom_seat_layout_v4');
+        localStorage.removeItem('classroom_seat_layout_v5');
         selectedHistory = [];
         currentlySelectedSeatId = null;
         rouletteActiveSeatId = null;
@@ -386,7 +410,7 @@ function resetAllSettingsWithAuth() {
             seat.mode = "normal";
             seat.assignedGrade = null;
         });
-        assignSeats();
+        assignSeats(true);
     } else {
         alert("パスワードが違います。初期化は拒否されました。");
     }
@@ -398,11 +422,11 @@ function saveToLocalStorage() {
         history: selectedHistory,
         currentLight: currentlySelectedSeatId
     };
-    localStorage.setItem('classroom_seat_layout_v4', JSON.stringify(dataToSave));
+    localStorage.setItem('classroom_seat_layout_v5', JSON.stringify(dataToSave));
 }
 
 function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('classroom_seat_layout_v4');
+    const savedData = localStorage.getItem('classroom_seat_layout_v5');
     if (savedData) {
         const parsed = JSON.parse(savedData);
         if (parsed.history) selectedHistory = parsed.history;
@@ -416,9 +440,9 @@ function loadFromLocalStorage() {
                 }
             });
         }
-        updateDOMDisplay();
+        assignSeats(false); // 保存データの状態を維持して描画
     } else {
-        assignSeats();
+        assignSeats(true);
     }
 }
 
