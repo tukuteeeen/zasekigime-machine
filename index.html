@@ -15,8 +15,9 @@
         .palette-l3 { background-color: #ffe6e6; border-color: #ff0000; color: #ff0000; }
         .palette-dis { background-color: #555555; border-color: #222; color: #fff; }
         .palette-emp { background-color: #ffffff; border-color: #bbb; color: #666; border-style: dashed; }
-        .controls { margin-bottom: 25px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-        .btn { padding: 10px 16px; font-size: 15px; font-weight: bold; cursor: pointer; border: 2px solid #333; border-radius: 5px; transition: 0.2s; }
+        
+        .controls { margin-bottom: 25px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
+        .btn { padding: 10px 16px; font-size: 15px; font-weight: bold; cursor: pointer; border: 2px solid #333; border-radius: 5px; transition: 0.2s; box-sizing: border-box; height: 42px; display: inline-flex; align-items: center; justify-content: center; }
         .btn-undo { background-color: #cbd5e1; }
         .btn-shuffle { background-color: #e2e8f0; }
         .btn-r1 { background-color: #9bbfff; }
@@ -25,8 +26,16 @@
         .btn-clear-selection { background-color: #d6bcfa; }
         .btn-random-num { background-color: #4caf50; color: white; font-weight: bold; }
         .btn-clear { background-color: #ff9999; }
+        
+        /* 人数指定選出用のスタイル */
+        .count-picker-container { display: inline-flex; align-items: center; gap: 6px; border: 2px solid #333; border-radius: 5px; background: #e0f2fe; padding: 0 8px; height: 42px; box-sizing: border-box; }
+        .count-input { width: 45px; height: 28px; text-align: center; font-size: 16px; font-weight: bold; border: 1px solid #333; border-radius: 3px; }
+        .btn-count-select { background-color: #0284c7; color: white; border: none; height: 30px; padding: 0 12px; font-size: 13px; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        .btn-count-select:hover { opacity: 0.9; }
+
         .btn:hover { opacity: 0.8; transform: scale(1.03); }
-        .btn:disabled { background-color: #ccc !important; border-color: #999 !important; color: #666 !important; cursor: not-allowed; transform: none !important; opacity: 1 !important; }
+        .btn:disabled, .count-picker-container[disabled] *, .btn-count-select:disabled { background-color: #ccc !important; border-color: #999 !important; color: #666 !important; cursor: not-allowed; transform: none !important; opacity: 1 !important; }
+        
         .classroom { display: flex; flex-direction: column; gap: 30px; align-items: center; width: 100%; max-width: 1100px; }
         .row-front { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; width: 75%; justify-content: center; }
         .row-back { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; width: 100%; }
@@ -76,6 +85,12 @@
         <button id="btn-r1" class="btn btn-r1" onclick="selectImmediate(1)">1年生を選出</button>
         <button id="btn-r2" class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
         <button id="btn-r3" class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
+        
+        <div id="picker-container" class="count-picker-container">
+            <input type="number" id="select-count-input" class="count-input" min="1" max="28" value="1">
+            <button id="btn-count-run" class="btn-count-select" onclick="selectMultipleSeatsRandomly()">人を選出</button>
+        </div>
+
         <button id="btn-clear-sel" class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
         <button id="btn-random-num" class="btn btn-random-num" onclick="assignRandomNumbers()">出席番号ランダム</button>
         <button id="btn-reset" class="btn btn-clear" onclick="resetAllSettingsWithAuth()">配置を完全初期化</button>
@@ -272,7 +287,6 @@ function handleSeatClick(seatId) {
     if (!selectedHistory.includes(seatId)) return; 
     if (activeInputSeatId === seatId) return; 
 
-    // 他に開いているテキストボックスがあるなら先にコミット（強制確定）させて競合を防ぐ
     if (activeInputSeatId !== null) {
         const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
         if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
@@ -288,7 +302,6 @@ function handleSeatClick(seatId) {
     }
 }
 
-// 確定処理を関数化（引数でDOM更新をかけるかどうか制御）
 function commitRandomNum(seatId, value, triggerDOMUpdate = true) {
     const seat = seatLayout.find(s => s.id === seatId);
     if (seat) {
@@ -326,7 +339,6 @@ function updateDOMDisplay() {
                 labelEl.innerHTML = `<input type="number" id="input-field-${seat.id}" class="num-input" min="1" value="${seat.randomNum ?? ''}" placeholder="番号" onclick="event.stopPropagation()">`;
                 
                 const inputEl = labelEl.querySelector('input');
-                // mousedown（クリック判定の直前）で処理を走らせることでボタン無効化のタイミングと衝突させない
                 inputEl.addEventListener('blur', (e) => {
                     commitRandomNum(seat.id, e.target.value, true);
                 });
@@ -362,7 +374,6 @@ function selectImmediate(targetGrade) {
     }
     saveToUndoStack();
     
-    // ルーレット開始時、もし開いているテキストボックスがあれば中身を強制取得して閉じる
     if (activeInputSeatId !== null) {
         const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
         if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
@@ -382,7 +393,7 @@ function selectImmediate(targetGrade) {
             selectedHistory.push(finalId);
             
             activeInputSeatId = finalId;
-            setButtonsDisabled(false); // 先にボタンを有効化して表示を正常に戻す
+            setButtonsDisabled(false); 
             updateDOMDisplay();
             saveToLocalStorage();
 
@@ -395,12 +406,79 @@ function selectImmediate(targetGrade) {
     }, intervalTime);
 }
 
+// 新設：複数席をランダムで同時に選出する関数
+function selectMultipleSeatsRandomly() {
+    const inputEl = document.getElementById("select-count-input");
+    let count = parseInt(inputEl.value, 10);
+    
+    // まだ選ばれていない有効な席（来賓・空白以外）をリストアップ
+    const availableSeats = seatLayout.filter(s => 
+        s.mode !== "disabled" && 
+        s.mode !== "empty" && 
+        !selectedHistory.includes(s.id)
+    );
+
+    if (availableSeats.length === 0) {
+        alert("選出できる空き席がもうありません。");
+        return;
+    }
+
+    if (isNaN(count) || count < 1) {
+        alert("1以上の正しい人数を入力してください。");
+        return;
+    }
+
+    // 残り席数より大きい数が入力された場合は、残り全席を選出する
+    if (count > availableSeats.length) {
+        alert(`指定された人数が多いため、残りの全 ${availableSeats.length} 席を選出します。`);
+        count = availableSeats.length;
+    }
+
+    saveToUndoStack();
+
+    // 入力中のテキストボックスがあれば事前にデータを保存して閉じる
+    if (activeInputSeatId !== null) {
+        const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
+        if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
+    }
+
+    // リストをシャッフルして指定人数分取り出す
+    const shuffled = availableSeats.sort(() => Math.random() - 0.5);
+    const selectedSeats = shuffled.slice(0, count);
+
+    // 履歴に追加
+    selectedSeats.forEach(seat => {
+        selectedHistory.push(seat.id);
+    });
+
+    // 複数選択された時は最後の1つのテキストボックスを開く（それ以外は後からクリックで入力可能）
+    activeInputSeatId = selectedSeats[selectedSeats.length - 1].id;
+
+    updateDOMDisplay();
+    saveToLocalStorage();
+
+    // 最後に選ばれた席に自動フォーカス
+    const targetInput = document.getElementById(`input-field-${activeInputSeatId}`);
+    if (targetInput) {
+        targetInput.focus();
+        targetInput.select();
+    }
+}
+
 function setButtonsDisabled(disabled) {
-    const ids = ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-random-num","btn-reset"];
+    const ids = ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-random-num","btn-reset","btn-count-run"];
     ids.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = disabled;
     });
+    // 人数指定のコンテナ自体を視覚的に無効化
+    const container = document.getElementById("picker-container");
+    if (container) {
+        if (disabled) container.setAttribute("disabled", "true");
+        else container.removeAttribute("disabled");
+        const input = container.querySelector("input");
+        if (input) input.disabled = disabled;
+    }
 }
 
 function clearSelectionHistory() {
@@ -436,7 +514,6 @@ function resetAllSettingsWithAuth() {
 function assignRandomNumbers() {
     saveToUndoStack();
 
-    // ランダム生成が動く前に、現在開いている入力欄の数値を確実にデータへ吸い上げる
     if (activeInputSeatId !== null) {
         const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
         if (openedInput) {
