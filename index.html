@@ -129,7 +129,7 @@
     </div>
 
 <script>
-// ==================== 完全版 JavaScript ====================
+// ==================== 完全版 JavaScript（新機能追加済み） ====================
 const seatLayout = [
     { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
     { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
@@ -359,20 +359,30 @@ function resetAllSettingsWithAuth() {
 
 function assignRandomNumbers() {
     saveToUndoStack();
-    
+
     const seatNumbers = [11,12,13,14,21,22,23,24,31,32,33,34,41,42,43,44,51,52,53,54,61,62,63,64,71,72,73,74];
-    let numbers = [...seatNumbers];
+
+    // 選出済みの席に現在ついている番号を保護
+    const protectedNumbers = seatLayout
+        .filter(s => selectedHistory.includes(s.id) && s.randomNum != null)
+        .map(s => s.randomNum);
+
+    // 保護されていない番号だけをシャッフル対象にする
+    let availableNumbers = seatNumbers.filter(num => !protectedNumbers.includes(num));
 
     // シャッフル
-    for (let i = numbers.length - 1; i > 0; i--) {
+    for (let i = availableNumbers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+        [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
     }
 
-    const seatOrder = seatNumbers;
-    seatOrder.forEach((id, idx) => {
-        const seat = seatLayout.find(s => s.id === id);
-        if (seat) seat.randomNum = numbers[idx];
+    // 選出されていない席だけに番号を割り当てる
+    const reassignableSeats = seatLayout.filter(s => !selectedHistory.includes(s.id));
+
+    reassignableSeats.forEach((seat, idx) => {
+        if (idx < availableNumbers.length) {
+            seat.randomNum = availableNumbers[idx];
+        }
     });
 
     updateDOMDisplay();
