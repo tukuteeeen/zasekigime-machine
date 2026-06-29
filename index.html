@@ -24,6 +24,7 @@
         .btn-r1 { background-color: #9bbfff; }
         .btn-r2 { background-color: #ffe599; }
         .btn-r3 { background-color: #f4cccc; }
+        .btn-clear-selection { background-color: #d6bcfa; } /* ★選出履歴だけを消す紫色のボタン */
         .btn-clear { background-color: #ff9999; } /* 保存クリアボタン */
         .btn:hover { opacity: 0.8; transform: scale(1.03); }
 
@@ -76,6 +77,7 @@
         <button class="btn btn-r1" onclick="selectImmediate(1)">1年生を選出</button>
         <button class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
         <button class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
+        <button class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
         <button class="btn btn-clear" onclick="resetAllSettings()">配置を完全初期化</button>
     </div>
 
@@ -160,6 +162,9 @@ const seatLayout = [
     { id: 73, island: 7, color: "yellow", mode: "normal", assignedGrade: null },
     { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
 ];
+
+// ★選出履歴（一度選ばれた席のID）を保存する配列
+let selectedHistory = [];
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
@@ -252,6 +257,11 @@ function updateDOMDisplay() {
         if (seat.mode === "locked3") el.classList.add("mode-locked3");
         if (seat.mode === "empty") el.classList.add("mode-empty");
 
+        // ★シャッフルされても、選出履歴に残っている席には緑色クラスを再付与する
+        if (selectedHistory.includes(seat.id)) {
+            el.classList.add("selected");
+        }
+
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
             let labelText = "";
@@ -268,49 +278,87 @@ function updateDOMDisplay() {
     });
 }
 
+// ★【修正コア機能】選出された席を除外リストに入れ、絶対に重複しないようにする
 function selectImmediate(targetGrade) {
-    document.querySelectorAll('.seat').forEach(el => el.classList.remove('selected'));
-    const targetSeats = seatLayout.filter(s => s.assignedGrade === targetGrade && s.mode !== "disabled" && s.mode !== "empty").map(s => s.id);
+    // 画面上の緑色(直前のエフェクト)を一度リセットしたい場合は外すことも可能ですが、
+    // 連続で選ばれた席をすべて緑のまま残すため、今回はクラスを剥がさず重複防止だけ連動させます。
+    
+    // 候補の絞り込み：指定した学年 ＆ 来賓・空白でない ＆ 「まだ選出履歴（selectedHistory）に入っていない」席
+    const targetSeats = seatLayout.filter(s => 
+        s.assignedGrade === targetGrade && 
+        s.mode !== "disabled" && 
+        s.mode !== "empty" &&
+        !selectedHistory.includes(s.id)
+    ).map(s => s.id);
+
     if (targetSeats.length === 0) {
-        alert(`${targetGrade}年生の席がありません。`);
+        alert(`${targetGrade}年生のまだ選ばれていない席がありません！`);
         return;
     }
+
+    // 重複のない残り候補からランダムで1つ決定
     const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
-    document.getElementById(`seat-${finalSeatId}`).classList.add('selected');
+    
+    // 履歴配列に追加
+    selectedHistory.push(finalSeatId);
+    
+    // 画面を更新してローカルストレージに保存
+    updateDOMDisplay();
+    saveToLocalStorage();
 }
 
-// 【新規追加】ブラウザのlocalStorageにデータを保存する
+// ★【新規追加】選出された履歴（緑色）だけをリセットする関数
+function clearSelectionHistory() {
+    if (confirm("これまでの「選出履歴（緑色の枠）」をすべてクリアして引き直せるようにしますか？")) {
+        selectedHistory = [];
+        saveToLocalStorage();
+        updateDOMDisplay();
+    }
+}
+
+// 【修正】ブラウザのlocalStorageに履歴も一緒に保存する
 function saveToLocalStorage() {
-    localStorage.setItem('classroom_seat_layout', JSON.stringify(seatLayout));
+    const dataToSave = {
+        layout: seatLayout,
+        history: selectedHistory
+    };
+    localStorage.setItem('classroom_seat_layout_v2', JSON.stringify(dataToSave));
 }
 
-// 【新規追加】ページ読み込み時にデータを復元する
+// 【修正】読み込み時に選出履歴も完全に復元する
 function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('classroom_seat_layout');
+    const savedData = localStorage.getItem('classroom_seat_layout_v2');
     if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        parsedData.forEach(savedSeat => {
-            const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
-            if (currentSeat) {
-                currentSeat.mode = savedSeat.mode;
-                currentSeat.assignedGrade = savedSeat.assignedGrade;
-            }
-        });
+        const parsed = JSON.parse(savedData);
+        
+        // 履歴を復元
+        if (parsed.history) selectedHistory = parsed.history;
+        
+        // レイアウト状態を復元
+        if (parsed.layout) {
+            parsed.layout.forEach(savedSeat => {
+                const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
+                if (currentSeat) {
+                    currentSeat.mode = savedSeat.mode;
+                    currentSeat.assignedGrade = savedSeat.assignedGrade;
+                }
+            });
+        }
         updateDOMDisplay();
     } else {
         assignSeats();
     }
 }
 
-// 【新規追加】クリアボタン用：全設定を消去して初期状態にする
+// クリアボタン用：全設定を消去して初期状態にする
 function resetAllSettings() {
-    if(confirm("すべての固定設定や空白設定をリセットして初期化しますか？")) {
-        localStorage.removeItem('classroom_seat_layout');
+    if(confirm("すべての固定設定や空白設定、選出履歴をリセットして初期化しますか？")) {
+        localStorage.removeItem('classroom_seat_layout_v2');
+        selectedHistory = [];
         seatLayout.forEach(seat => {
             seat.mode = "normal";
             seat.assignedGrade = null;
         });
-        document.querySelectorAll('.seat').forEach(el => el.classList.remove('selected'));
         assignSeats();
     }
 }
