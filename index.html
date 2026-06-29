@@ -72,7 +72,7 @@
         <button id="btn-r2" class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
         <button id="btn-r3" class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
         <button id="btn-clear-sel" class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
-        <button class="btn" style="background-color: #81c784;" onclick="assignRandomNumbers()">出席番号ランダム</button>
+        <button class="btn" style="background-color: #4caf50; color: white; font-weight: bold;" onclick="assignRandomNumbers()">出席番号ランダム</button>
         <button id="btn-reset" class="btn btn-clear" onclick="resetAllSettingsWithAuth()">配置を完全初期化</button>
     </div>
 
@@ -129,7 +129,7 @@
     </div>
 
 <script>
-// ==================== JavaScript（完全版 + 出席番号ランダム機能） ====================
+// ==================== 完全版 JavaScript ====================
 const seatLayout = [
     { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
     { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
@@ -359,16 +359,22 @@ function resetAllSettingsWithAuth() {
 
 function assignRandomNumbers() {
     saveToUndoStack();
-    const seatOrder = [11,12,13,14,21,22,23,24,31,32,33,34,41,42,43,44,51,52,53,54,61,62,63,64,71,72,73,74];
-    let numbers = Array.from({length: 28}, (_, i) => i + 1);
+    
+    const seatNumbers = [11,12,13,14,21,22,23,24,31,32,33,34,41,42,43,44,51,52,53,54,61,62,63,64,71,72,73,74];
+    let numbers = [...seatNumbers];
+
+    // シャッフル
     for (let i = numbers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
     }
+
+    const seatOrder = seatNumbers;
     seatOrder.forEach((id, idx) => {
         const seat = seatLayout.find(s => s.id === id);
         if (seat) seat.randomNum = numbers[idx];
     });
+
     updateDOMDisplay();
     saveToLocalStorage();
 }
