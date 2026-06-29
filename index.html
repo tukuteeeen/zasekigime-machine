@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>ドラッグ＆ドロップ座席カスタマイザー</title>
     <style>
-        /* ここは元のCSSをそのまま使用（省略して記載） */
         body { font-family: sans-serif; background-color: #f5f5f5; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; margin: 0; }
         .monitor { width: 300px; background-color: #c6d9f1; text-align: center; padding: 8px; margin: 20px 0; border: 2px solid #000; font-weight: bold; }
         .drag-palette { display: flex; gap: 12px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -76,8 +75,8 @@
         <button id="btn-reset" class="btn btn-clear" onclick="resetAllSettingsWithAuth()">配置を完全初期化</button>
     </div>
 
-    <!-- 座席レイアウト（元のまま） -->
     <div class="classroom">
+        <!-- row-front -->
         <div class="row-front">
             <div class="island">
                 <div id="seat-11" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 11)"><strong>11</strong><span class="status-label"></span></div>
@@ -85,15 +84,81 @@
                 <div id="seat-13" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 13)"><strong>13</strong><span class="status-label"></span></div>
                 <div id="seat-14" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 14)"><strong>14</strong><span class="status-label"></span></div>
             </div>
-            <!-- 以下、元のrow-frontとrow-backの全seatをそのまま記載（省略） -->
-            <!-- （実際は元の完全なHTMLの座席部分を全部コピーしてください） -->
+            <div class="island">
+                <div id="seat-21" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 21)"><strong>21</strong><span class="status-label"></span></div>
+                <div id="seat-22" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 22)"><strong>22</strong><span class="status-label"></span></div>
+                <div id="seat-23" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 23)"><strong>23</strong><span class="status-label"></span></div>
+                <div id="seat-24" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 24)"><strong>24</strong><span class="status-label"></span></div>
+            </div>
+            <div class="island">
+                <div id="seat-31" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 31)"><strong>31</strong><span class="status-label"></span></div>
+                <div id="seat-32" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 32)"><strong>32</strong><span class="status-label"></span></div>
+                <div id="seat-33" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 33)"><strong>33</strong><span class="status-label"></span></div>
+                <div id="seat-34" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 34)"><strong>34</strong><span class="status-label"></span></div>
+            </div>
         </div>
-        <!-- row-back部分も元のコードから全部コピー -->
+
+        <!-- row-back -->
+        <div class="row-back">
+            <div class="island">
+                <div id="seat-41" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 41)"><strong>41</strong><span class="status-label"></span></div>
+                <div id="seat-42" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 42)"><strong>42</strong><span class="status-label"></span></div>
+                <div id="seat-43" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 43)"><strong>43</strong><span class="status-label"></span></div>
+                <div id="seat-44" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 44)"><strong>44</strong><span class="status-label"></span></div>
+            </div>
+            <div class="island">
+                <div id="seat-51" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 51)"><strong>51</strong><span class="status-label"></span></div>
+                <div id="seat-52" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 52)"><strong>52</strong><span class="status-label"></span></div>
+                <div id="seat-53" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 53)"><strong>53</strong><span class="status-label"></span></div>
+                <div id="seat-54" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 54)"><strong>54</strong><span class="status-label"></span></div>
+            </div>
+            <div class="island">
+                <div id="seat-61" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 61)"><strong>61</strong><span class="status-label"></span></div>
+                <div id="seat-62" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 62)"><strong>62</strong><span class="status-label"></span></div>
+                <div id="seat-63" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 63)"><strong>63</strong><span class="status-label"></span></div>
+                <div id="seat-64" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 64)"><strong>64</strong><span class="status-label"></span></div>
+            </div>
+            <div class="island">
+                <div id="seat-71" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 71)"><strong>71</strong><span class="status-label"></span></div>
+                <div id="seat-72" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 72)"><strong>72</strong><span class="status-label"></span></div>
+                <div id="seat-73" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 73)"><strong>73</strong><span class="status-label"></span></div>
+                <div id="seat-74" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 74)"><strong>74</strong><span class="status-label"></span></div>
+            </div>
+        </div>
     </div>
 
 <script>
-// ここから下は修正済みの完全なJavaScriptです
-const seatLayout = [ /* 元のseatLayout配列をそのまま使用 */ ];
+// ==================== ここからJavaScript（改善済み） ====================
+const seatLayout = [
+    { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null },
+    { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 13, island: 1, color: "white", mode: "normal", assignedGrade: null },
+    { id: 14, island: 1, color: "white", mode: "normal", assignedGrade: null },
+    { id: 21, island: 2, color: "white", mode: "normal", assignedGrade: null },
+    { id: 22, island: 2, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 23, island: 2, color: "yellow", mode: "normal", assignedGrade: null },
+    { id: 24, island: 2, color: "white", mode: "normal", assignedGrade: null },
+    { id: 31, island: 3, color: "white", mode: "normal", assignedGrade: null },
+    { id: 32, island: 3, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 33, island: 3, color: "yellow", mode: "normal", assignedGrade: null },
+    { id: 34, island: 3, color: "white", mode: "normal", assignedGrade: null },
+    { id: 41, island: 4, color: "white", mode: "normal", assignedGrade: null },
+    { id: 42, island: 4, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 43, island: 4, color: "white", mode: "normal", assignedGrade: null },
+    { id: 44, island: 4, color: "white", mode: "normal", assignedGrade: null },
+    { id: 51, island: 5, color: "white", mode: "normal", assignedGrade: null },
+    { id: 52, island: 5, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 53, island: 5, color: "yellow", mode: "normal", assignedGrade: null },
+    { id: 54, island: 5, color: "red", mode: "normal", assignedGrade: null },
+    { id: 61, island: 6, color: "white", mode: "normal", assignedGrade: null },
+    { id: 62, island: 6, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 63, island: 6, color: "yellow", mode: "normal", assignedGrade: null },
+    { id: 64, island: 6, color: "red", mode: "normal", assignedGrade: null },
+    { id: 71, island: 7, color: "white", mode: "normal", assignedGrade: null },
+    { id: 72, island: 7, color: "blue", mode: "normal", assignedGrade: null },
+    { id: 73, island: 7, color: "yellow", mode: "normal", assignedGrade: null },
+    { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
+];
 
 const CORRECT_PASSWORD = "1234";
 
@@ -101,7 +166,9 @@ let selectedHistory = [];
 let rouletteActiveSeatId = null;
 let undoStack = [];
 
-function drag(ev) { /* 元のまま */ }
+function drag(ev) {
+    ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
+}
 function allowDrop(ev) { ev.preventDefault(); }
 function dragEnter(ev) { ev.currentTarget.classList.add("drag-over"); }
 function dragLeave(ev) { ev.currentTarget.classList.remove("drag-over"); }
@@ -133,55 +200,96 @@ function handleUndo() {
     saveToLocalStorage();
 }
 
-function drop(ev, seatId) { /* 元のまま（saveToUndoStackを呼ぶ） */ }
+function drop(ev, seatId) {
+    ev.preventDefault();
+    ev.currentTarget.classList.remove("drag-over");
+    const mode = ev.dataTransfer.getData("text/plain");
+    const seat = seatLayout.find(s => s.id === seatId);
+    if (seat) {
+        saveToUndoStack();
+        seat.mode = mode;
+        if (mode === "normal") seat.assignedGrade = null;
+        else if (mode === "disabled") seat.assignedGrade = "来賓";
+        else if (mode === "empty") seat.assignedGrade = "空白";
+        else if (mode === "locked1") seat.assignedGrade = 1;
+        else if (mode === "locked2") seat.assignedGrade = 2;
+        else if (mode === "locked3") seat.assignedGrade = 3;
+        recalculateNormalSeats(false);
+    }
+}
 
-function assignSeatsWithAuth() { /* 元のまま */ }
+function assignSeatsWithAuth() {
+    const password = prompt("管理者パスワードを入力してください：");
+    if (password === CORRECT_PASSWORD) {
+        saveToUndoStack();
+        recalculateNormalSeats(true);
+    } else {
+        alert("パスワードが違います。");
+    }
+}
 
-function recalculateNormalSeats(forceShuffle = true) { /* 元のまま */ }
+function recalculateNormalSeats(forceShuffle = true) {
+    for (let islandNum = 1; islandNum <= 7; islandNum++) {
+        const islandSeats = seatLayout.filter(s => s.island === islandNum);
+        const freeSeats = [];
+        let requiredGrades = [1, 2, 3];
+        islandSeats.forEach(seat => {
+            if (seat.mode === "disabled") seat.assignedGrade = "来賓";
+            else if (seat.mode === "empty") seat.assignedGrade = "空白";
+            else if (seat.mode === "locked1") { seat.assignedGrade = 1; requiredGrades = requiredGrades.filter(g => g !== 1); }
+            else if (seat.mode === "locked2") { seat.assignedGrade = 2; requiredGrades = requiredGrades.filter(g => g !== 2); }
+            else if (seat.mode === "locked3") { seat.assignedGrade = 3; requiredGrades = requiredGrades.filter(g => g !== 3); }
+            else {
+                if (forceShuffle) seat.assignedGrade = null;
+                freeSeats.push(seat);
+            }
+        });
+        if (forceShuffle || freeSeats.some(s => s.assignedGrade === null)) {
+            const shuffled = freeSeats.sort(() => Math.random() - 0.5);
+            shuffled.forEach(seat => {
+                if (requiredGrades.length > 0) seat.assignedGrade = requiredGrades.shift();
+                else seat.assignedGrade = Math.floor(Math.random() * 3) + 1;
+            });
+        }
+    }
+    updateDOMDisplay();
+    saveToLocalStorage();
+}
 
 function updateDOMDisplay() {
     seatLayout.forEach(seat => {
         const el = document.getElementById(`seat-${seat.id}`);
         if (!el) return;
-
         el.className = `seat color-${seat.color}`;
-        
         if (seat.assignedGrade === "来賓") el.classList.add("bg-disabled");
         else if (seat.assignedGrade === "空白") el.classList.add("bg-empty");
         else if (seat.assignedGrade === 1) el.classList.add("bg-grade1");
         else if (seat.assignedGrade === 2) el.classList.add("bg-grade2");
         else if (seat.assignedGrade === 3) el.classList.add("bg-grade3");
-
         if (seat.mode === "locked1") el.classList.add("mode-locked1");
         if (seat.mode === "locked2") el.classList.add("mode-locked2");
         if (seat.mode === "locked3") el.classList.add("mode-locked3");
         if (seat.mode === "empty") el.classList.add("mode-empty");
-
         if (seat.id === rouletteActiveSeatId) el.classList.add("roulette-active");
-
-        // ★ここが重要：selectedHistoryに入っている席は必ず緑にする
-        if (selectedHistory.includes(seat.id)) {
-            el.classList.add("selected");
-        }
-
+        if (selectedHistory.includes(seat.id)) el.classList.add("selected");
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
-            let labelText = "";
-            if (seat.mode === "disabled") labelText = "来賓";
-            else if (seat.mode === "empty") labelText = "空白";
+            let text = "";
+            if (seat.mode === "disabled") text = "来賓";
+            else if (seat.mode === "empty") text = "空白";
             else {
-                labelText = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
-                if (seat.mode.startsWith("locked")) labelText += " (固)";
+                text = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
+                if (seat.mode.startsWith("locked")) text += " (固)";
             }
-            labelEl.textContent = labelText;
+            labelEl.textContent = text;
         }
     });
 }
 
 function selectImmediate(targetGrade) {
-    const targetSeats = seatLayout.filter(s => 
-        s.assignedGrade === targetGrade && 
-        s.mode !== "disabled" && 
+    const targetSeats = seatLayout.filter(s =>
+        s.assignedGrade === targetGrade &&
+        s.mode !== "disabled" &&
         s.mode !== "empty" &&
         !selectedHistory.includes(s.id)
     ).map(s => s.id);
@@ -190,27 +298,19 @@ function selectImmediate(targetGrade) {
         alert(`${targetGrade}年生のまだ選ばれていない席がありません。`);
         return;
     }
-
     saveToUndoStack();
     setButtonsDisabled(true);
 
-    let duration = 1500;
-    let intervalTime = 60;
-    let elapsed = 0;
-
+    let duration = 1500, intervalTime = 60, elapsed = 0;
     const timer = setInterval(() => {
-        const randomSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
-        rouletteActiveSeatId = randomSeatId;
+        rouletteActiveSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
         updateDOMDisplay();
-        
         elapsed += intervalTime;
         if (elapsed >= duration) {
             clearInterval(timer);
             rouletteActiveSeatId = null;
-
-            const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
-            selectedHistory.push(finalSeatId);   // ← ここで追加（過去のものは消さない）
-
+            const finalId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
+            selectedHistory.push(finalId);
             updateDOMDisplay();
             saveToLocalStorage();
             setButtonsDisabled(false);
@@ -218,41 +318,59 @@ function selectImmediate(targetGrade) {
     }, intervalTime);
 }
 
-function setButtonsDisabled(disabled) { /* 元のまま */ }
+function setButtonsDisabled(disabled) {
+    ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-reset"].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = disabled;
+    });
+}
 
-function clearSelectionHistory() { /* 元のまま */ }
+function clearSelectionHistory() {
+    if (confirm("選出履歴をすべてクリアしますか？")) {
+        saveToUndoStack();
+        selectedHistory = [];
+        saveToLocalStorage();
+        updateDOMDisplay();
+    }
+}
 
-function resetAllSettingsWithAuth() { /* 元のまま */ }
+function resetAllSettingsWithAuth() {
+    const pw = prompt("初期化パスワードを入力：");
+    if (pw === CORRECT_PASSWORD) {
+        saveToUndoStack();
+        localStorage.removeItem('classroom_seat_layout_v8');
+        selectedHistory = [];
+        rouletteActiveSeatId = null;
+        seatLayout.forEach(s => { s.mode = "normal"; s.assignedGrade = null; });
+        recalculateNormalSeats(true);
+    } else {
+        alert("パスワードが違います。");
+    }
+}
 
 function saveToLocalStorage() {
-    const dataToSave = {
-        layout: seatLayout,
-        history: selectedHistory
-    };
-    localStorage.setItem('classroom_seat_layout_v8', JSON.stringify(dataToSave));
+    localStorage.setItem('classroom_seat_layout_v8', JSON.stringify({ layout: seatLayout, history: selectedHistory }));
 }
 
 function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('classroom_seat_layout_v8');
-    if (savedData) {
-        const parsed = JSON.parse(savedData);
+    const data = localStorage.getItem('classroom_seat_layout_v8');
+    if (data) {
+        const parsed = JSON.parse(data);
         if (parsed.history) selectedHistory = parsed.history;
         if (parsed.layout) {
-            parsed.layout.forEach(savedSeat => {
-                const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
-                if (currentSeat) {
-                    currentSeat.mode = savedSeat.mode;
-                    currentSeat.assignedGrade = savedSeat.assignedGrade;
-                }
+            parsed.layout.forEach(saved => {
+                const s = seatLayout.find(x => x.id === saved.id);
+                if (s) { s.mode = saved.mode; s.assignedGrade = saved.assignedGrade; }
             });
         }
-        updateDOMDisplay();   // ← recalculateの代わりに直接更新
+        updateDOMDisplay();
     } else {
         recalculateNormalSeats(true);
     }
 }
 
 loadFromLocalStorage();
+// ==================== JavaScript終了 ====================
 </script>
 </body>
 </html>
