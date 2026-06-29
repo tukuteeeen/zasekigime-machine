@@ -72,6 +72,7 @@
         <button id="btn-r2" class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
         <button id="btn-r3" class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
         <button id="btn-clear-sel" class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
+        <button class="btn" style="background-color: #81c784;" onclick="assignRandomNumbers()">出席番号ランダム</button>
         <button id="btn-reset" class="btn btn-clear" onclick="resetAllSettingsWithAuth()">配置を完全初期化</button>
     </div>
 
@@ -128,36 +129,36 @@
     </div>
 
 <script>
-// ==================== ここからJavaScript（改善済み） ====================
+// ==================== JavaScript（完全版 + 出席番号ランダム機能） ====================
 const seatLayout = [
-    { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null },
-    { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 13, island: 1, color: "white", mode: "normal", assignedGrade: null },
-    { id: 14, island: 1, color: "white", mode: "normal", assignedGrade: null },
-    { id: 21, island: 2, color: "white", mode: "normal", assignedGrade: null },
-    { id: 22, island: 2, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 23, island: 2, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 24, island: 2, color: "white", mode: "normal", assignedGrade: null },
-    { id: 31, island: 3, color: "white", mode: "normal", assignedGrade: null },
-    { id: 32, island: 3, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 33, island: 3, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 34, island: 3, color: "white", mode: "normal", assignedGrade: null },
-    { id: 41, island: 4, color: "white", mode: "normal", assignedGrade: null },
-    { id: 42, island: 4, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 43, island: 4, color: "white", mode: "normal", assignedGrade: null },
-    { id: 44, island: 4, color: "white", mode: "normal", assignedGrade: null },
-    { id: 51, island: 5, color: "white", mode: "normal", assignedGrade: null },
-    { id: 52, island: 5, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 53, island: 5, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 54, island: 5, color: "red", mode: "normal", assignedGrade: null },
-    { id: 61, island: 6, color: "white", mode: "normal", assignedGrade: null },
-    { id: 62, island: 6, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 63, island: 6, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 64, island: 6, color: "red", mode: "normal", assignedGrade: null },
-    { id: 71, island: 7, color: "white", mode: "normal", assignedGrade: null },
-    { id: 72, island: 7, color: "blue", mode: "normal", assignedGrade: null },
-    { id: 73, island: 7, color: "yellow", mode: "normal", assignedGrade: null },
-    { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
+    { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 13, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 14, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 21, island: 2, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 22, island: 2, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 23, island: 2, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 24, island: 2, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 31, island: 3, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 32, island: 3, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 33, island: 3, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 34, island: 3, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 41, island: 4, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 42, island: 4, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 43, island: 4, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 44, island: 4, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 51, island: 5, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 52, island: 5, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 53, island: 5, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 54, island: 5, color: "red", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 61, island: 6, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 62, island: 6, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 63, island: 6, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 64, island: 6, color: "red", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 71, island: 7, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 72, island: 7, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 73, island: 7, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null, randomNum: null }
 ];
 
 const CORRECT_PASSWORD = "1234";
@@ -193,6 +194,7 @@ function handleUndo() {
         if (currentSeat) {
             currentSeat.mode = savedSeat.mode;
             currentSeat.assignedGrade = savedSeat.assignedGrade;
+            currentSeat.randomNum = savedSeat.randomNum ?? null;
         }
     });
     selectedHistory = previousState.history;
@@ -272,6 +274,7 @@ function updateDOMDisplay() {
         if (seat.mode === "empty") el.classList.add("mode-empty");
         if (seat.id === rouletteActiveSeatId) el.classList.add("roulette-active");
         if (selectedHistory.includes(seat.id)) el.classList.add("selected");
+
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
             let text = "";
@@ -281,6 +284,7 @@ function updateDOMDisplay() {
                 text = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
                 if (seat.mode.startsWith("locked")) text += " (固)";
             }
+            if (seat.randomNum != null) text += ` #${seat.randomNum}`;
             labelEl.textContent = text;
         }
     });
@@ -319,7 +323,8 @@ function selectImmediate(targetGrade) {
 }
 
 function setButtonsDisabled(disabled) {
-    ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-reset"].forEach(id => {
+    const ids = ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-reset"];
+    ids.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = disabled;
     });
@@ -341,15 +346,38 @@ function resetAllSettingsWithAuth() {
         localStorage.removeItem('classroom_seat_layout_v8');
         selectedHistory = [];
         rouletteActiveSeatId = null;
-        seatLayout.forEach(s => { s.mode = "normal"; s.assignedGrade = null; });
+        seatLayout.forEach(s => {
+            s.mode = "normal";
+            s.assignedGrade = null;
+            s.randomNum = null;
+        });
         recalculateNormalSeats(true);
     } else {
         alert("パスワードが違います。");
     }
 }
 
+function assignRandomNumbers() {
+    saveToUndoStack();
+    const seatOrder = [11,12,13,14,21,22,23,24,31,32,33,34,41,42,43,44,51,52,53,54,61,62,63,64,71,72,73,74];
+    let numbers = Array.from({length: 28}, (_, i) => i + 1);
+    for (let i = numbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+    }
+    seatOrder.forEach((id, idx) => {
+        const seat = seatLayout.find(s => s.id === id);
+        if (seat) seat.randomNum = numbers[idx];
+    });
+    updateDOMDisplay();
+    saveToLocalStorage();
+}
+
 function saveToLocalStorage() {
-    localStorage.setItem('classroom_seat_layout_v8', JSON.stringify({ layout: seatLayout, history: selectedHistory }));
+    localStorage.setItem('classroom_seat_layout_v8', JSON.stringify({
+        layout: seatLayout,
+        history: selectedHistory
+    }));
 }
 
 function loadFromLocalStorage() {
@@ -360,7 +388,11 @@ function loadFromLocalStorage() {
         if (parsed.layout) {
             parsed.layout.forEach(saved => {
                 const s = seatLayout.find(x => x.id === saved.id);
-                if (s) { s.mode = saved.mode; s.assignedGrade = saved.assignedGrade; }
+                if (s) {
+                    s.mode = saved.mode;
+                    s.assignedGrade = saved.assignedGrade;
+                    s.randomNum = saved.randomNum ?? null;
+                }
             });
         }
         updateDOMDisplay();
