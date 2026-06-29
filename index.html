@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>ドラッグ＆ドロップ座席カスタマイザー</title>
     <style>
-        /* あなたが貼ったコードのCSSをそのまま使用 */
         body { font-family: sans-serif; background-color: #f5f5f5; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; margin: 0; }
         .monitor { width: 300px; background-color: #c6d9f1; text-align: center; padding: 8px; margin: 20px 0; border: 2px solid #000; font-weight: bold; }
         .drag-palette { display: flex; gap: 12px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -32,8 +31,10 @@
         .row-front { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; width: 75%; justify-content: center; }
         .row-back { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; width: 100%; }
         .island { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #000; background-color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
         .seat { width: 110px; height: 55px; border: 1px solid #bbb; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; box-sizing: border-box; background-color: #ffffff; transition: background-color 0.2s; }
         .seat.selected { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; transform: scale(1.04); z-index: 10; box-shadow: 0 0 12px #00ff66; cursor: pointer; }
+        
         .seat.color-white { border-left: 6px solid #dddddd; }
         .seat.color-blue { border-left: 6px solid #4a90e2; }
         .seat.color-yellow { border-left: 6px solid #ffcc00; }
@@ -52,6 +53,7 @@
         .status-label { font-size: 11px; margin-top: 3px; color: #333; font-weight: bold; width: 90%; text-align: center; display: flex; justify-content: center; }
         .seat.bg-disabled .status-label { color: #ccc !important; }
         .seat.bg-empty .status-label { color: #ddd !important; }
+
         .num-input { width: 55px; text-align: center; font-size: 11px; padding: 1px; border: 1px solid #333; border-radius: 3px; font-weight: bold; box-sizing: border-box; }
     </style>
 </head>
@@ -79,14 +81,7 @@
         <button id="btn-reset" class="btn btn-clear" onclick="resetAllSettingsWithAuth()">配置を完全初期化</button>
     </div>
 
-    <!-- 人数入力機能（ここを追加） -->
-    <div style="margin-bottom: 20px; text-align: center;">
-        <input type="number" id="people-count" placeholder="人数" style="width: 70px; padding: 8px; font-size: 15px; border: 2px solid #333; border-radius: 5px; text-align: center;">
-        <button class="btn" style="background-color: #2196f3; color: white;" onclick="assignRandomSeatsByCount()">人数分ランダムに席を決める</button>
-    </div>
-
     <div class="classroom">
-        <!-- あなたが貼ったコードの座席部分をそのまま使用 -->
         <div class="row-front">
             <div class="island">
                 <div id="seat-11" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 11)" onclick="handleSeatClick(11)"><strong>11</strong><span class="status-label"></span></div>
@@ -94,7 +89,6 @@
                 <div id="seat-13" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 13)" onclick="handleSeatClick(13)"><strong>13</strong><span class="status-label"></span></div>
                 <div id="seat-14" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 14)" onclick="handleSeatClick(14)"><strong>14</strong><span class="status-label"></span></div>
             </div>
-            <!-- 21〜34までのislandもそのまま -->
             <div class="island">
                 <div id="seat-21" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 21)" onclick="handleSeatClick(21)"><strong>21</strong><span class="status-label"></span></div>
                 <div id="seat-22" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 22)" onclick="handleSeatClick(22)"><strong>22</strong><span class="status-label"></span></div>
@@ -110,7 +104,6 @@
         </div>
 
         <div class="row-back">
-            <!-- 41〜74までのislandもそのまま -->
             <div class="island">
                 <div id="seat-41" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 41)" onclick="handleSeatClick(41)"><strong>41</strong><span class="status-label"></span></div>
                 <div id="seat-42" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 42)" onclick="handleSeatClick(42)"><strong>42</strong><span class="status-label"></span></div>
@@ -139,9 +132,36 @@
     </div>
 
 <script>
-/* ここから下はあなたが貼ったコードをベースに、人数分ランダム機能を追加した完全版 */
-
-const seatLayout = [ /* あなたが貼ったseatLayoutをそのまま使用 */ ];
+const seatLayout = [
+    { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 13, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 14, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 21, island: 2, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 22, island: 2, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 23, island: 2, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 24, island: 2, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 31, island: 3, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 32, island: 3, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 33, island: 3, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 34, island: 3, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 41, island: 4, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 42, island: 4, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 43, island: 4, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 44, island: 4, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 51, island: 5, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 52, island: 5, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 53, island: 5, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 54, island: 5, color: "red", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 61, island: 6, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 62, island: 6, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 63, island: 6, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 64, island: 6, color: "red", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 71, island: 7, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 72, island: 7, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 73, island: 7, color: "yellow", mode: "normal", assignedGrade: null, randomNum: null },
+    { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null, randomNum: null }
+];
 
 const CORRECT_PASSWORD = "1234";
 
@@ -150,65 +170,335 @@ let rouletteActiveSeatId = null;
 let undoStack = [];
 let activeInputSeatId = null; 
 
-// ここから下はあなたが貼った関数をそのまま使用（handleUndo, updateDOMDisplay, handleSeatClick, commitRandomNum など）
+function drag(ev) {
+    ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
+}
+function allowDrop(ev) { ev.preventDefault(); }
+function dragEnter(ev) { ev.currentTarget.classList.add("drag-over"); }
+function dragLeave(ev) { ev.currentTarget.classList.remove("drag-over"); }
 
-function assignRandomSeatsByCount() {
-    const count = parseInt(document.getElementById("people-count").value);
-    if (!count || count <= 0) {
-        alert("正しい人数を入力してください");
+function saveToUndoStack() {
+    const stateSnapshot = {
+        layout: JSON.parse(JSON.stringify(seatLayout)),
+        history: [...selectedHistory]
+    };
+    undoStack.push(stateSnapshot);
+    if (undoStack.length > 20) undoStack.shift();
+}
+
+function handleUndo() {
+    if (undoStack.length === 0) {
+        alert("これ以上戻ることはできません。");
         return;
     }
+    const previousState = undoStack.pop();
+    previousState.layout.forEach(savedSeat => {
+        const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
+        if (currentSeat) {
+            currentSeat.mode = savedSeat.mode;
+            currentSeat.assignedGrade = savedSeat.assignedGrade;
+            currentSeat.randomNum = savedSeat.randomNum ?? null;
+        }
+    });
+    selectedHistory = previousState.history;
+    activeInputSeatId = null; 
+    updateDOMDisplay();
+    saveToLocalStorage();
+}
 
-    // 開いている出席番号入力があれば先に確定させる
+function drop(ev, seatId) {
+    ev.preventDefault();
+    ev.currentTarget.classList.remove("drag-over");
+    const mode = ev.dataTransfer.getData("text/plain");
+    const seat = seatLayout.find(s => s.id === seatId);
+    if (seat) {
+        saveToUndoStack();
+        seat.mode = mode;
+        if (mode === "normal") {
+            seat.assignedGrade = null;
+            seat.randomNum = null; 
+        }
+        else if (mode === "disabled") seat.assignedGrade = "来賓";
+        else if (mode === "empty") seat.assignedGrade = "空白";
+        else if (mode === "locked1") seat.assignedGrade = 1;
+        else if (mode === "locked2") seat.assignedGrade = 2;
+        else if (mode === "locked3") seat.assignedGrade = 3;
+        recalculateNormalSeats(false);
+    }
+}
+
+function assignSeatsWithAuth() {
+    const password = prompt("管理者パスワードを入力してください：");
+    if (password === CORRECT_PASSWORD) {
+        saveToUndoStack();
+        recalculateNormalSeats(true);
+    } else {
+        alert("パスワードが違います。");
+    }
+}
+
+function recalculateNormalSeats(forceShuffle = true) {
+    for (let islandNum = 1; islandNum <= 7; islandNum++) {
+        const islandSeats = seatLayout.filter(s => s.island === islandNum);
+        const freeSeats = [];
+        let requiredGrades = [1, 2, 3];
+        islandSeats.forEach(seat => {
+            if (seat.mode === "disabled") seat.assignedGrade = "来賓";
+            else if (seat.mode === "empty") seat.assignedGrade = "空白";
+            else if (seat.mode === "locked1") { seat.assignedGrade = 1; requiredGrades = requiredGrades.filter(g => g !== 1); }
+            else if (seat.mode === "locked2") { seat.assignedGrade = 2; requiredGrades = requiredGrades.filter(g => g !== 2); }
+            else if (seat.mode === "locked3") { seat.assignedGrade = 3; requiredGrades = requiredGrades.filter(g => g !== 3); }
+            else {
+                if (forceShuffle) {
+                    seat.assignedGrade = null;
+                    seat.randomNum = null; 
+                }
+                freeSeats.push(seat);
+            }
+        });
+        if (forceShuffle || freeSeats.some(s => s.assignedGrade === null)) {
+            const shuffled = freeSeats.sort(() => Math.random() - 0.5);
+            shuffled.forEach(seat => {
+                if (requiredGrades.length > 0) seat.assignedGrade = requiredGrades.shift();
+                else seat.assignedGrade = Math.floor(Math.random() * 3) + 1;
+            });
+        }
+    }
+    updateDOMDisplay();
+    saveToLocalStorage();
+}
+
+function handleSeatClick(seatId) {
+    if (!selectedHistory.includes(seatId)) return; 
+    if (activeInputSeatId === seatId) return; 
+
+    // 他に開いているテキストボックスがあるなら先にコミット（強制確定）させて競合を防ぐ
     if (activeInputSeatId !== null) {
         const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
         if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
     }
 
-    const available = seatLayout.filter(s => 
-        !selectedHistory.includes(s.id) &&
-        s.mode !== "disabled" &&
-        s.mode !== "empty"
-    );
+    activeInputSeatId = seatId;
+    updateDOMDisplay();
 
-    if (available.length < count) {
-        alert(`選べる席が足りません（残り${available.length}席）`);
+    const inputEl = document.getElementById(`input-field-${seatId}`);
+    if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+    }
+}
+
+// 確定処理を関数化（引数でDOM更新をかけるかどうか制御）
+function commitRandomNum(seatId, value, triggerDOMUpdate = true) {
+    const seat = seatLayout.find(s => s.id === seatId);
+    if (seat) {
+        saveToUndoStack();
+        const num = parseInt(value, 10);
+        seat.randomNum = (!isNaN(num) && num > 0) ? num : null;
+    }
+    activeInputSeatId = null;
+    if (triggerDOMUpdate) {
+        updateDOMDisplay();
+    }
+    saveToLocalStorage();
+}
+
+function updateDOMDisplay() {
+    seatLayout.forEach(seat => {
+        const el = document.getElementById(`seat-${seat.id}`);
+        if (!el) return;
+        el.className = `seat color-${seat.color}`;
+        if (seat.assignedGrade === "来賓") el.classList.add("bg-disabled");
+        else if (seat.assignedGrade === "空白") el.classList.add("bg-empty");
+        else if (seat.assignedGrade === 1) el.classList.add("bg-grade1");
+        else if (seat.assignedGrade === 2) el.classList.add("bg-grade2");
+        else if (seat.assignedGrade === 3) el.classList.add("bg-grade3");
+        if (seat.mode === "locked1") el.classList.add("mode-locked1");
+        if (seat.mode === "locked2") el.classList.add("mode-locked2");
+        if (seat.mode === "locked3") el.classList.add("mode-locked3");
+        if (seat.mode === "empty") el.classList.add("mode-empty");
+        if (seat.id === rouletteActiveSeatId) el.classList.add("roulette-active");
+        if (selectedHistory.includes(seat.id)) el.classList.add("selected");
+
+        const labelEl = el.querySelector(".status-label");
+        if (labelEl) {
+            if (seat.id === activeInputSeatId) {
+                labelEl.innerHTML = `<input type="number" id="input-field-${seat.id}" class="num-input" min="1" value="${seat.randomNum ?? ''}" placeholder="番号" onclick="event.stopPropagation()">`;
+                
+                const inputEl = labelEl.querySelector('input');
+                // mousedown（クリック判定の直前）で処理を走らせることでボタン無効化のタイミングと衝突させない
+                inputEl.addEventListener('blur', (e) => {
+                    commitRandomNum(seat.id, e.target.value, true);
+                });
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') commitRandomNum(seat.id, e.target.value, true);
+                });
+            } else {
+                let text = "";
+                if (seat.mode === "disabled") text = "来賓";
+                else if (seat.mode === "empty") text = "空白";
+                else {
+                    text = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
+                    if (seat.mode.startsWith("locked")) text += " (固)";
+                }
+                if (seat.randomNum != null) text += ` #${seat.randomNum}`;
+                labelEl.textContent = text;
+            }
+        }
+    });
+}
+
+function selectImmediate(targetGrade) {
+    const targetSeats = seatLayout.filter(s =>
+        s.assignedGrade === targetGrade &&
+        s.mode !== "disabled" &&
+        s.mode !== "empty" &&
+        !selectedHistory.includes(s.id)
+    ).map(s => s.id);
+
+    if (targetSeats.length === 0) {
+        alert(`${targetGrade}年生のまだ選ばれていない席がありません。`);
         return;
     }
-
     saveToUndoStack();
+    
+    // ルーレット開始時、もし開いているテキストボックスがあれば中身を強制取得して閉じる
+    if (activeInputSeatId !== null) {
+        const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
+        if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
+    }
 
-    // ルーレット風アニメーション
-    let duration = 1200;
-    let intervalTime = 70;
-    let elapsed = 0;
+    setButtonsDisabled(true);
 
+    let duration = 1500, intervalTime = 60, elapsed = 0;
     const timer = setInterval(() => {
-        const randomSeat = available[Math.floor(Math.random() * available.length)];
-        rouletteActiveSeatId = randomSeat.id;
+        rouletteActiveSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
         updateDOMDisplay();
-
         elapsed += intervalTime;
         if (elapsed >= duration) {
             clearInterval(timer);
             rouletteActiveSeatId = null;
-
-            // 最終決定
-            const shuffled = [...available].sort(() => Math.random() - 0.5);
-            const finalSeats = shuffled.slice(0, count);
-
-            finalSeats.forEach(seat => {
-                selectedHistory.push(seat.id);
-            });
-
+            const finalId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
+            selectedHistory.push(finalId);
+            
+            activeInputSeatId = finalId;
+            setButtonsDisabled(false); // 先にボタンを有効化して表示を正常に戻す
             updateDOMDisplay();
-            alert(`${count}人分の席をランダムに決めました！`);
+            saveToLocalStorage();
+
+            const inputEl = document.getElementById(`input-field-${finalId}`);
+            if (inputEl) {
+                inputEl.focus();
+                inputEl.select();
+            }
         }
     }, intervalTime);
 }
 
-// 以下はあなたが貼ったコードの残りの関数をそのまま入れてください
-// （handleUndo, updateDOMDisplay, selectImmediate, assignRandomNumbers など）
+function setButtonsDisabled(disabled) {
+    const ids = ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-random-num","btn-reset"];
+    ids.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = disabled;
+    });
+}
+
+function clearSelectionHistory() {
+    if (confirm("選出履歴をすべてクリアしますか？（手動入力した出席番号も初期化されます）")) {
+        saveToUndoStack();
+        selectedHistory = [];
+        activeInputSeatId = null;
+        seatLayout.forEach(s => s.randomNum = null);
+        saveToLocalStorage();
+        updateDOMDisplay();
+    }
+}
+
+function resetAllSettingsWithAuth() {
+    const pw = prompt("初期化パスワードを入力：");
+    if (pw === CORRECT_PASSWORD) {
+        saveToUndoStack();
+        localStorage.removeItem('classroom_seat_layout_v8');
+        selectedHistory = [];
+        rouletteActiveSeatId = null;
+        activeInputSeatId = null;
+        seatLayout.forEach(s => {
+            s.mode = "normal";
+            s.assignedGrade = null;
+            s.randomNum = null;
+        });
+        recalculateNormalSeats(true);
+    } else {
+        alert("パスワードが違います。");
+    }
+}
+
+function assignRandomNumbers() {
+    saveToUndoStack();
+
+    // ランダム生成が動く前に、現在開いている入力欄の数値を確実にデータへ吸い上げる
+    if (activeInputSeatId !== null) {
+        const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
+        if (openedInput) {
+            commitRandomNum(activeInputSeatId, openedInput.value, false);
+        }
+    }
+
+    const validSeatsCount = seatLayout.filter(s => s.mode !== "disabled" && s.mode !== "empty").length;
+    if (validSeatsCount === 0) return;
+
+    const allStudentNumbers = Array.from({ length: validSeatsCount }, (_, i) => i + 1);
+
+    const protectedNumbers = seatLayout
+        .filter(s => s.randomNum != null)
+        .map(s => s.randomNum);
+
+    let availableNumbers = allStudentNumbers.filter(num => !protectedNumbers.includes(num));
+
+    for (let i = availableNumbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
+    }
+
+    const reassignableSeats = seatLayout.filter(s => s.mode !== "disabled" && s.mode !== "empty" && s.randomNum == null);
+
+    reassignableSeats.forEach((seat, idx) => {
+        if (idx < availableNumbers.length) {
+            seat.randomNum = availableNumbers[idx];
+        }
+    });
+
+    updateDOMDisplay();
+    saveToLocalStorage();
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem('classroom_seat_layout_v8', JSON.stringify({
+        layout: seatLayout,
+        history: selectedHistory
+    }));
+}
+
+function loadFromLocalStorage() {
+    const data = localStorage.getItem('classroom_seat_layout_v8');
+    if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed.history) selectedHistory = parsed.history;
+        if (parsed.layout) {
+            parsed.layout.forEach(saved => {
+                const s = seatLayout.find(x => x.id === saved.id);
+                if (s) {
+                    s.mode = saved.mode;
+                    s.assignedGrade = saved.assignedGrade;
+                    s.randomNum = saved.randomNum ?? null;
+                }
+            });
+        }
+        updateDOMDisplay();
+    } else {
+        recalculateNormalSeats(true);
+    }
+}
 
 loadFromLocalStorage();
 </script>
