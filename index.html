@@ -30,7 +30,11 @@
         .row-front { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; width: 75%; justify-content: center; }
         .row-back { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; width: 100%; }
         .island { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #000; background-color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* cursor: pointer を追加して選出された席がクリック可能であることを明示 */
         .seat { width: 110px; height: 55px; border: 1px solid #bbb; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; box-sizing: border-box; background-color: #ffffff; transition: background-color 0.2s; }
+        .seat.selected { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; transform: scale(1.04); z-index: 10; box-shadow: 0 0 12px #00ff66; cursor: pointer; }
+        
         .seat.color-white { border-left: 6px solid #dddddd; }
         .seat.color-blue { border-left: 6px solid #4a90e2; }
         .seat.color-yellow { border-left: 6px solid #ffcc00; }
@@ -45,11 +49,13 @@
         .seat.mode-locked2 { border: 2px solid #ffaa00 !important; }
         .seat.mode-locked3 { border: 2px solid #ff0000 !important; }
         .seat.mode-empty { border: 2px dashed #bbb !important; }
-        .seat.selected { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; transform: scale(1.04); z-index: 10; box-shadow: 0 0 12px #00ff66; }
         .seat.roulette-active { background-color: #ffeb3b !important; color: #000 !important; font-weight: bold; }
         .status-label { font-size: 11px; margin-top: 3px; color: #333; font-weight: bold; }
         .seat.bg-disabled .status-label { color: #ccc !important; }
         .seat.bg-empty .status-label { color: #ddd !important; }
+
+        /* 出席番号入力用の極小テキストボックススタイル */
+        .num-input { width: 50px; text-align: center; font-size: 12px; padding: 2px; border: 1px solid #333; border-radius: 3px; font-weight: bold; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -77,59 +83,56 @@
     </div>
 
     <div class="classroom">
-        <!-- row-front -->
         <div class="row-front">
             <div class="island">
-                <div id="seat-11" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 11)"><strong>11</strong><span class="status-label"></span></div>
-                <div id="seat-12" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 12)"><strong>12</strong><span class="status-label"></span></div>
-                <div id="seat-13" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 13)"><strong>13</strong><span class="status-label"></span></div>
-                <div id="seat-14" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 14)"><strong>14</strong><span class="status-label"></span></div>
+                <div id="seat-11" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 11)" onclick="handleSeatClick(11)"><strong>11</strong><span class="status-label"></span></div>
+                <div id="seat-12" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 12)" onclick="handleSeatClick(12)"><strong>12</strong><span class="status-label"></span></div>
+                <div id="seat-13" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 13)" onclick="handleSeatClick(13)"><strong>13</strong><span class="status-label"></span></div>
+                <div id="seat-14" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 14)" onclick="handleSeatClick(14)"><strong>14</strong><span class="status-label"></span></div>
             </div>
             <div class="island">
-                <div id="seat-21" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 21)"><strong>21</strong><span class="status-label"></span></div>
-                <div id="seat-22" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 22)"><strong>22</strong><span class="status-label"></span></div>
-                <div id="seat-23" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 23)"><strong>23</strong><span class="status-label"></span></div>
-                <div id="seat-24" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 24)"><strong>24</strong><span class="status-label"></span></div>
+                <div id="seat-21" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 21)" onclick="handleSeatClick(21)"><strong>21</strong><span class="status-label"></span></div>
+                <div id="seat-22" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 22)" onclick="handleSeatClick(22)"><strong>22</strong><span class="status-label"></span></div>
+                <div id="seat-23" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 23)" onclick="handleSeatClick(23)"><strong>23</strong><span class="status-label"></span></div>
+                <div id="seat-24" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 24)" onclick="handleSeatClick(24)"><strong>24</strong><span class="status-label"></span></div>
             </div>
             <div class="island">
-                <div id="seat-31" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 31)"><strong>31</strong><span class="status-label"></span></div>
-                <div id="seat-32" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 32)"><strong>32</strong><span class="status-label"></span></div>
-                <div id="seat-33" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 33)"><strong>33</strong><span class="status-label"></span></div>
-                <div id="seat-34" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 34)"><strong>34</strong><span class="status-label"></span></div>
+                <div id="seat-31" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 31)" onclick="handleSeatClick(31)"><strong>31</strong><span class="status-label"></span></div>
+                <div id="seat-32" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 32)" onclick="handleSeatClick(32)"><strong>32</strong><span class="status-label"></span></div>
+                <div id="seat-33" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 33)" onclick="handleSeatClick(33)"><strong>33</strong><span class="status-label"></span></div>
+                <div id="seat-34" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 34)" onclick="handleSeatClick(34)"><strong>34</strong><span class="status-label"></span></div>
             </div>
         </div>
 
-        <!-- row-back -->
         <div class="row-back">
             <div class="island">
-                <div id="seat-41" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 41)"><strong>41</strong><span class="status-label"></span></div>
-                <div id="seat-42" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 42)"><strong>42</strong><span class="status-label"></span></div>
-                <div id="seat-43" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 43)"><strong>43</strong><span class="status-label"></span></div>
-                <div id="seat-44" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 44)"><strong>44</strong><span class="status-label"></span></div>
+                <div id="seat-41" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 41)" onclick="handleSeatClick(41)"><strong>41</strong><span class="status-label"></span></div>
+                <div id="seat-42" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 42)" onclick="handleSeatClick(42)"><strong>42</strong><span class="status-label"></span></div>
+                <div id="seat-43" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 43)" onclick="handleSeatClick(43)"><strong>43</strong><span class="status-label"></span></div>
+                <div id="seat-44" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 44)" onclick="handleSeatClick(44)"><strong>44</strong><span class="status-label"></span></div>
             </div>
             <div class="island">
-                <div id="seat-51" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 51)"><strong>51</strong><span class="status-label"></span></div>
-                <div id="seat-52" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 52)"><strong>52</strong><span class="status-label"></span></div>
-                <div id="seat-53" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 53)"><strong>53</strong><span class="status-label"></span></div>
-                <div id="seat-54" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 54)"><strong>54</strong><span class="status-label"></span></div>
+                <div id="seat-51" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 51)" onclick="handleSeatClick(51)"><strong>51</strong><span class="status-label"></span></div>
+                <div id="seat-52" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 52)" onclick="handleSeatClick(52)"><strong>52</strong><span class="status-label"></span></div>
+                <div id="seat-53" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 53)" onclick="handleSeatClick(53)"><strong>53</strong><span class="status-label"></span></div>
+                <div id="seat-54" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 54)" onclick="handleSeatClick(54)"><strong>54</strong><span class="status-label"></span></div>
             </div>
             <div class="island">
-                <div id="seat-61" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 61)"><strong>61</strong><span class="status-label"></span></div>
-                <div id="seat-62" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 62)"><strong>62</strong><span class="status-label"></span></div>
-                <div id="seat-63" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 63)"><strong>63</strong><span class="status-label"></span></div>
-                <div id="seat-64" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 64)"><strong>64</strong><span class="status-label"></span></div>
+                <div id="seat-61" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 61)" onclick="handleSeatClick(61)"><strong>61</strong><span class="status-label"></span></div>
+                <div id="seat-62" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 62)" onclick="handleSeatClick(62)"><strong>62</strong><span class="status-label"></span></div>
+                <div id="seat-63" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 63)" onclick="handleSeatClick(63)"><strong>63</strong><span class="status-label"></span></div>
+                <div id="seat-64" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 64)" onclick="handleSeatClick(64)"><strong>64</strong><span class="status-label"></span></div>
             </div>
             <div class="island">
-                <div id="seat-71" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 71)"><strong>71</strong><span class="status-label"></span></div>
-                <div id="seat-72" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 72)"><strong>72</strong><span class="status-label"></span></div>
-                <div id="seat-73" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 73)"><strong>73</strong><span class="status-label"></span></div>
-                <div id="seat-74" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 74)"><strong>74</strong><span class="status-label"></span></div>
+                <div id="seat-71" class="seat color-white" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 71)" onclick="handleSeatClick(71)"><strong>71</strong><span class="status-label"></span></div>
+                <div id="seat-72" class="seat color-blue" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 72)" onclick="handleSeatClick(72)"><strong>72</strong><span class="status-label"></span></div>
+                <div id="seat-73" class="seat color-yellow" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 73)" onclick="handleSeatClick(73)"><strong>73</strong><span class="status-label"></span></div>
+                <div id="seat-74" class="seat color-red" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 74)" onclick="handleSeatClick(74)"><strong>74</strong><span class="status-label"></span></div>
             </div>
         </div>
     </div>
 
 <script>
-// ==================== 完全版 JavaScript（新機能追加済み） ====================
 const seatLayout = [
     { id: 11, island: 1, color: "white", mode: "normal", assignedGrade: null, randomNum: null },
     { id: 12, island: 1, color: "blue", mode: "normal", assignedGrade: null, randomNum: null },
@@ -166,6 +169,7 @@ const CORRECT_PASSWORD = "1234";
 let selectedHistory = [];
 let rouletteActiveSeatId = null;
 let undoStack = [];
+let activeInputSeatId = null; // 現在テキストボックスを表示している座席ID
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
@@ -198,6 +202,7 @@ function handleUndo() {
         }
     });
     selectedHistory = previousState.history;
+    activeInputSeatId = null; // 状態を戻したときはテキストボックスを閉じる
     updateDOMDisplay();
     saveToLocalStorage();
 }
@@ -210,7 +215,10 @@ function drop(ev, seatId) {
     if (seat) {
         saveToUndoStack();
         seat.mode = mode;
-        if (mode === "normal") seat.assignedGrade = null;
+        if (mode === "normal") {
+            seat.assignedGrade = null;
+            seat.randomNum = null; // 通常席に戻した場合は番号も消去
+        }
         else if (mode === "disabled") seat.assignedGrade = "来賓";
         else if (mode === "empty") seat.assignedGrade = "空白";
         else if (mode === "locked1") seat.assignedGrade = 1;
@@ -242,7 +250,10 @@ function recalculateNormalSeats(forceShuffle = true) {
             else if (seat.mode === "locked2") { seat.assignedGrade = 2; requiredGrades = requiredGrades.filter(g => g !== 2); }
             else if (seat.mode === "locked3") { seat.assignedGrade = 3; requiredGrades = requiredGrades.filter(g => g !== 3); }
             else {
-                if (forceShuffle) seat.assignedGrade = null;
+                if (forceShuffle) {
+                    seat.assignedGrade = null;
+                    seat.randomNum = null; // 全体シャッフル時は通常席の番号をリセット
+                }
                 freeSeats.push(seat);
             }
         });
@@ -254,6 +265,35 @@ function recalculateNormalSeats(forceShuffle = true) {
             });
         }
     }
+    updateDOMDisplay();
+    saveToLocalStorage();
+}
+
+// 緑色の選出済み席がクリックされたらテキストボックスを呼び出す
+function handleSeatClick(seatId) {
+    if (!selectedHistory.includes(seatId)) return; // 選出された席以外は無視
+    if (activeInputSeatId === seatId) return; // すでに開いているなら何もしない
+
+    activeInputSeatId = seatId;
+    updateDOMDisplay();
+
+    // 生成されたインプット要素に自動フォーカス
+    const inputEl = document.getElementById(`input-field-${seatId}`);
+    if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+    }
+}
+
+// 入力値を確定して保存する
+function commitRandomNum(seatId, value) {
+    const seat = seatLayout.find(s => s.id === seatId);
+    if (seat) {
+        saveToUndoStack();
+        const num = parseInt(value, 10);
+        seat.randomNum = (!isNaN(num) && num > 0) ? num : null;
+    }
+    activeInputSeatId = null;
     updateDOMDisplay();
     saveToLocalStorage();
 }
@@ -277,15 +317,27 @@ function updateDOMDisplay() {
 
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
-            let text = "";
-            if (seat.mode === "disabled") text = "来賓";
-            else if (seat.mode === "empty") text = "空白";
-            else {
-                text = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
-                if (seat.mode.startsWith("locked")) text += " (固)";
+            // テキストボックス表示フラグが立っている場合、インプットに置き換える
+            if (seat.id === activeInputSeatId) {
+                labelEl.innerHTML = `<input type="number" id="input-field-${seat.id}" class="num-input" min="1" value="${seat.randomNum ?? ''}" placeholder="番号" onclick="event.stopPropagation()">`;
+                
+                const inputEl = labelEl.querySelector('input');
+                // フォーカスアウト時、またはEnterキー押下時に値を確定
+                inputEl.addEventListener('blur', (e) => commitRandomNum(seat.id, e.target.value));
+                inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') commitRandomNum(seat.id, e.target.value);
+                });
+            } else {
+                let text = "";
+                if (seat.mode === "disabled") text = "来賓";
+                else if (seat.mode === "empty") text = "空白";
+                else {
+                    text = seat.assignedGrade ? `${seat.assignedGrade}年` : "配置中";
+                    if (seat.mode.startsWith("locked")) text += " (固)";
+                }
+                if (seat.randomNum != null) text += ` #${seat.randomNum}`;
+                labelEl.textContent = text;
             }
-            if (seat.randomNum != null) text += ` #${seat.randomNum}`;
-            labelEl.textContent = text;
         }
     });
 }
@@ -303,6 +355,7 @@ function selectImmediate(targetGrade) {
         return;
     }
     saveToUndoStack();
+    activeInputSeatId = null; // ルーレット開始時は入力欄を閉じる
     setButtonsDisabled(true);
 
     let duration = 1500, intervalTime = 60, elapsed = 0;
@@ -315,9 +368,20 @@ function selectImmediate(targetGrade) {
             rouletteActiveSeatId = null;
             const finalId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
             selectedHistory.push(finalId);
+            
+            // 選出完了後、自動的にその席のテキストボックスを開く
+            activeInputSeatId = finalId;
+            
             updateDOMDisplay();
             saveToLocalStorage();
             setButtonsDisabled(false);
+
+            // フォーカスを当てる
+            const inputEl = document.getElementById(`input-field-${finalId}`);
+            if (inputEl) {
+                inputEl.focus();
+                inputEl.select();
+            }
         }
     }, intervalTime);
 }
@@ -331,9 +395,11 @@ function setButtonsDisabled(disabled) {
 }
 
 function clearSelectionHistory() {
-    if (confirm("選出履歴をすべてクリアしますか？")) {
+    if (confirm("選出履歴をすべてクリアしますか？（手動入力した出席番号も初期化されます）")) {
         saveToUndoStack();
         selectedHistory = [];
+        activeInputSeatId = null;
+        seatLayout.forEach(s => s.randomNum = null);
         saveToLocalStorage();
         updateDOMDisplay();
     }
@@ -346,6 +412,7 @@ function resetAllSettingsWithAuth() {
         localStorage.removeItem('classroom_seat_layout_v8');
         selectedHistory = [];
         rouletteActiveSeatId = null;
+        activeInputSeatId = null;
         seatLayout.forEach(s => {
             s.mode = "normal";
             s.assignedGrade = null;
@@ -357,27 +424,35 @@ function resetAllSettingsWithAuth() {
     }
 }
 
+// 出席番号ランダムロジックを修正
 function assignRandomNumbers() {
     saveToUndoStack();
+    activeInputSeatId = null; // 入力欄を閉じる
 
-    const seatNumbers = [11,12,13,14,21,22,23,24,31,32,33,34,41,42,43,44,51,52,53,54,61,62,63,64,71,72,73,74];
+    // 有効な（来賓・空白ではない）座席の総数をカウント（これが全生徒数＝最大出席番号になる）
+    const validSeatsCount = seatLayout.filter(s => s.mode !== "disabled" && s.mode !== "empty").length;
 
-    // 選出済みの席に現在ついている番号を保護
+    if (validSeatsCount === 0) return;
+
+    // 1 から 有効座席数 までの「正しい出席番号のリスト」を生成
+    const allStudentNumbers = Array.from({ length: validSeatsCount }, (_, i) => i + 1);
+
+    // すでに手動入力、または選出済みで「確定して保持されている出席番号」を取得
     const protectedNumbers = seatLayout
-        .filter(s => selectedHistory.includes(s.id) && s.randomNum != null)
+        .filter(s => s.randomNum != null)
         .map(s => s.randomNum);
 
-    // 保護されていない番号だけをシャッフル対象にする
-    let availableNumbers = seatNumbers.filter(num => !protectedNumbers.includes(num));
+    // すでに使われている番号を母集団から完全に除外する
+    let availableNumbers = allStudentNumbers.filter(num => !protectedNumbers.includes(num));
 
-    // シャッフル
+    // 残りの番号をシャッフル
     for (let i = availableNumbers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
     }
 
-    // 選出されていない席だけに番号を割り当てる
-    const reassignableSeats = seatLayout.filter(s => !selectedHistory.includes(s.id));
+    // 番号がまだ割り当てられていない（randomNum が null の）座席を抽出
+    const reassignableSeats = seatLayout.filter(s => s.mode !== "disabled" && s.mode !== "empty" && s.randomNum == null);
 
     reassignableSeats.forEach((seat, idx) => {
         if (idx < availableNumbers.length) {
@@ -418,7 +493,6 @@ function loadFromLocalStorage() {
 }
 
 loadFromLocalStorage();
-// ==================== JavaScript終了 ====================
 </script>
 </body>
 </html>
