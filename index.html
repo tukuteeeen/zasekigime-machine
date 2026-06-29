@@ -23,6 +23,7 @@
         .btn-r2 { background-color: #ffe599; }
         .btn-r3 { background-color: #f4cccc; }
         .btn-clear-selection { background-color: #d6bcfa; }
+        .btn-random-num { background-color: #4caf50; color: white; font-weight: bold; }
         .btn-clear { background-color: #ff9999; }
         .btn:hover { opacity: 0.8; transform: scale(1.03); }
         .btn:disabled { background-color: #ccc !important; border-color: #999 !important; color: #666 !important; cursor: not-allowed; transform: none !important; opacity: 1 !important; }
@@ -31,7 +32,6 @@
         .row-back { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; width: 100%; }
         .island { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #000; background-color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
-        /* cursor: pointer を追加して選出された席がクリック可能であることを明示 */
         .seat { width: 110px; height: 55px; border: 1px solid #bbb; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; position: relative; box-sizing: border-box; background-color: #ffffff; transition: background-color 0.2s; }
         .seat.selected { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; transform: scale(1.04); z-index: 10; box-shadow: 0 0 12px #00ff66; cursor: pointer; }
         
@@ -50,12 +50,11 @@
         .seat.mode-locked3 { border: 2px solid #ff0000 !important; }
         .seat.mode-empty { border: 2px dashed #bbb !important; }
         .seat.roulette-active { background-color: #ffeb3b !important; color: #000 !important; font-weight: bold; }
-        .status-label { font-size: 11px; margin-top: 3px; color: #333; font-weight: bold; }
+        .status-label { font-size: 11px; margin-top: 3px; color: #333; font-weight: bold; width: 90%; text-align: center; display: flex; justify-content: center; }
         .seat.bg-disabled .status-label { color: #ccc !important; }
         .seat.bg-empty .status-label { color: #ddd !important; }
 
-        /* 出席番号入力用の極小テキストボックススタイル */
-        .num-input { width: 50px; text-align: center; font-size: 12px; padding: 2px; border: 1px solid #333; border-radius: 3px; font-weight: bold; margin-top: 2px; }
+        .num-input { width: 55px; text-align: center; font-size: 11px; padding: 1px; border: 1px solid #333; border-radius: 3px; font-weight: bold; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -78,7 +77,7 @@
         <button id="btn-r2" class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
         <button id="btn-r3" class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
         <button id="btn-clear-sel" class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
-        <button class="btn" style="background-color: #4caf50; color: white; font-weight: bold;" onclick="assignRandomNumbers()">出席番号ランダム</button>
+        <button id="btn-random-num" class="btn btn-random-num" onclick="assignRandomNumbers()">出席番号ランダム</button>
         <button id="btn-reset" class="btn btn-clear" onclick="resetAllSettingsWithAuth()">配置を完全初期化</button>
     </div>
 
@@ -169,7 +168,7 @@ const CORRECT_PASSWORD = "1234";
 let selectedHistory = [];
 let rouletteActiveSeatId = null;
 let undoStack = [];
-let activeInputSeatId = null; // 現在テキストボックスを表示している座席ID
+let activeInputSeatId = null; 
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
@@ -202,7 +201,7 @@ function handleUndo() {
         }
     });
     selectedHistory = previousState.history;
-    activeInputSeatId = null; // 状態を戻したときはテキストボックスを閉じる
+    activeInputSeatId = null; 
     updateDOMDisplay();
     saveToLocalStorage();
 }
@@ -217,7 +216,7 @@ function drop(ev, seatId) {
         seat.mode = mode;
         if (mode === "normal") {
             seat.assignedGrade = null;
-            seat.randomNum = null; // 通常席に戻した場合は番号も消去
+            seat.randomNum = null; 
         }
         else if (mode === "disabled") seat.assignedGrade = "来賓";
         else if (mode === "empty") seat.assignedGrade = "空白";
@@ -252,7 +251,7 @@ function recalculateNormalSeats(forceShuffle = true) {
             else {
                 if (forceShuffle) {
                     seat.assignedGrade = null;
-                    seat.randomNum = null; // 全体シャッフル時は通常席の番号をリセット
+                    seat.randomNum = null; 
                 }
                 freeSeats.push(seat);
             }
@@ -269,15 +268,19 @@ function recalculateNormalSeats(forceShuffle = true) {
     saveToLocalStorage();
 }
 
-// 緑色の選出済み席がクリックされたらテキストボックスを呼び出す
 function handleSeatClick(seatId) {
-    if (!selectedHistory.includes(seatId)) return; // 選出された席以外は無視
-    if (activeInputSeatId === seatId) return; // すでに開いているなら何もしない
+    if (!selectedHistory.includes(seatId)) return; 
+    if (activeInputSeatId === seatId) return; 
+
+    // 他に開いているテキストボックスがあるなら先にコミット（強制確定）させて競合を防ぐ
+    if (activeInputSeatId !== null) {
+        const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
+        if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
+    }
 
     activeInputSeatId = seatId;
     updateDOMDisplay();
 
-    // 生成されたインプット要素に自動フォーカス
     const inputEl = document.getElementById(`input-field-${seatId}`);
     if (inputEl) {
         inputEl.focus();
@@ -285,8 +288,8 @@ function handleSeatClick(seatId) {
     }
 }
 
-// 入力値を確定して保存する
-function commitRandomNum(seatId, value) {
+// 確定処理を関数化（引数でDOM更新をかけるかどうか制御）
+function commitRandomNum(seatId, value, triggerDOMUpdate = true) {
     const seat = seatLayout.find(s => s.id === seatId);
     if (seat) {
         saveToUndoStack();
@@ -294,7 +297,9 @@ function commitRandomNum(seatId, value) {
         seat.randomNum = (!isNaN(num) && num > 0) ? num : null;
     }
     activeInputSeatId = null;
-    updateDOMDisplay();
+    if (triggerDOMUpdate) {
+        updateDOMDisplay();
+    }
     saveToLocalStorage();
 }
 
@@ -317,15 +322,16 @@ function updateDOMDisplay() {
 
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
-            // テキストボックス表示フラグが立っている場合、インプットに置き換える
             if (seat.id === activeInputSeatId) {
                 labelEl.innerHTML = `<input type="number" id="input-field-${seat.id}" class="num-input" min="1" value="${seat.randomNum ?? ''}" placeholder="番号" onclick="event.stopPropagation()">`;
                 
                 const inputEl = labelEl.querySelector('input');
-                // フォーカスアウト時、またはEnterキー押下時に値を確定
-                inputEl.addEventListener('blur', (e) => commitRandomNum(seat.id, e.target.value));
+                // mousedown（クリック判定の直前）で処理を走らせることでボタン無効化のタイミングと衝突させない
+                inputEl.addEventListener('blur', (e) => {
+                    commitRandomNum(seat.id, e.target.value, true);
+                });
                 inputEl.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') commitRandomNum(seat.id, e.target.value);
+                    if (e.key === 'Enter') commitRandomNum(seat.id, e.target.value, true);
                 });
             } else {
                 let text = "";
@@ -355,7 +361,13 @@ function selectImmediate(targetGrade) {
         return;
     }
     saveToUndoStack();
-    activeInputSeatId = null; // ルーレット開始時は入力欄を閉じる
+    
+    // ルーレット開始時、もし開いているテキストボックスがあれば中身を強制取得して閉じる
+    if (activeInputSeatId !== null) {
+        const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
+        if (openedInput) commitRandomNum(activeInputSeatId, openedInput.value, false);
+    }
+
     setButtonsDisabled(true);
 
     let duration = 1500, intervalTime = 60, elapsed = 0;
@@ -369,14 +381,11 @@ function selectImmediate(targetGrade) {
             const finalId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
             selectedHistory.push(finalId);
             
-            // 選出完了後、自動的にその席のテキストボックスを開く
             activeInputSeatId = finalId;
-            
+            setButtonsDisabled(false); // 先にボタンを有効化して表示を正常に戻す
             updateDOMDisplay();
             saveToLocalStorage();
-            setButtonsDisabled(false);
 
-            // フォーカスを当てる
             const inputEl = document.getElementById(`input-field-${finalId}`);
             if (inputEl) {
                 inputEl.focus();
@@ -387,7 +396,7 @@ function selectImmediate(targetGrade) {
 }
 
 function setButtonsDisabled(disabled) {
-    const ids = ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-reset"];
+    const ids = ["btn-undo","btn-shuffle","btn-r1","btn-r2","btn-r3","btn-clear-sel","btn-random-num","btn-reset"];
     ids.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = disabled;
@@ -424,34 +433,33 @@ function resetAllSettingsWithAuth() {
     }
 }
 
-// 出席番号ランダムロジックを修正
 function assignRandomNumbers() {
     saveToUndoStack();
-    activeInputSeatId = null; // 入力欄を閉じる
 
-    // 有効な（来賓・空白ではない）座席の総数をカウント（これが全生徒数＝最大出席番号になる）
+    // ランダム生成が動く前に、現在開いている入力欄の数値を確実にデータへ吸い上げる
+    if (activeInputSeatId !== null) {
+        const openedInput = document.getElementById(`input-field-${activeInputSeatId}`);
+        if (openedInput) {
+            commitRandomNum(activeInputSeatId, openedInput.value, false);
+        }
+    }
+
     const validSeatsCount = seatLayout.filter(s => s.mode !== "disabled" && s.mode !== "empty").length;
-
     if (validSeatsCount === 0) return;
 
-    // 1 から 有効座席数 までの「正しい出席番号のリスト」を生成
     const allStudentNumbers = Array.from({ length: validSeatsCount }, (_, i) => i + 1);
 
-    // すでに手動入力、または選出済みで「確定して保持されている出席番号」を取得
     const protectedNumbers = seatLayout
         .filter(s => s.randomNum != null)
         .map(s => s.randomNum);
 
-    // すでに使われている番号を母集団から完全に除外する
     let availableNumbers = allStudentNumbers.filter(num => !protectedNumbers.includes(num));
 
-    // 残りの番号をシャッフル
     for (let i = availableNumbers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
     }
 
-    // 番号がまだ割り当てられていない（randomNum が null の）座席を抽出
     const reassignableSeats = seatLayout.filter(s => s.mode !== "disabled" && s.mode !== "empty" && s.randomNum == null);
 
     reassignableSeats.forEach((seat, idx) => {
