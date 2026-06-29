@@ -165,15 +165,11 @@ const seatLayout = [
     { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
 ];
 
-// パスワード（必要に応じて変更可能）
 const CORRECT_PASSWORD = "1234";
 
-// 重複除外のための過去履歴
 let selectedHistory = [];
-// 現在光らせているターゲット席のID
-let currentlySelectedSeatId = null;
-// ルーレット演出用の一時的な光りターゲットID
-let rouletteActiveSeatId = null;
+let currentlySelectedSeatId = null; 
+let rouletteActiveSeatId = null; 
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
@@ -191,7 +187,7 @@ function dragLeave(ev) {
     ev.currentTarget.classList.remove("drag-over");
 }
 
-// ドロップ時の処理
+// ドロップ処理（競合バグを排除）
 function drop(ev, seatId) {
     ev.preventDefault();
     ev.currentTarget.classList.remove("drag-over");
@@ -201,9 +197,9 @@ function drop(ev, seatId) {
     
     if (seat) {
         seat.mode = mode;
-        // モード変更時に学年割当をリセット（通常席、または除外等に合わせるため）
+        // モードに合わせて内部データ（assignedGrade）を直接書き換え
         if (mode === "normal") {
-            seat.assignedGrade = null;
+            seat.assignedGrade = null; 
         } else if (mode === "disabled") {
             seat.assignedGrade = "来賓";
         } else if (mode === "empty") {
@@ -216,31 +212,30 @@ function drop(ev, seatId) {
             seat.assignedGrade = 3;
         }
         
-        // パレットをドロップしたときは、残りの席だけを再計算して画面更新
-        assignSeats(false); 
+        // パレット操作時は「シャッフルを回さず」に空いている通常席の整合性だけを整えて画面を更新する
+        recalculateNormalSeats(false);
     }
 }
 
-// パスワード認証付きシャッフル
+// 管理者認証付きシャッフル
 function assignSeatsWithAuth() {
     const password = prompt("管理者パスワードを入力してください：");
     if (password === CORRECT_PASSWORD) {
-        // 新しくシャッフルするときは現在の単一光り（緑）を解除
-        currentlySelectedSeatId = null;
-        assignSeats(true); // 強制リシャッフル
+        currentlySelectedSeatId = null; // 新たにシャッフルするため緑の光はリセット
+        recalculateNormalSeats(true);   // 通常席を完全強制シャッフル
     } else {
         alert("パスワードが違います。アクセスが拒否されました。");
     }
 }
 
-// 座席の自動配置ロジック（isShuffle=trueの時だけ通常席の配置を完全にリセット）
-function assignSeats(isShuffle = true) {
+// 座席の配置・再計算コアロジック
+function recalculateNormalSeats(forceShuffle = true) {
     for (let islandNum = 1; islandNum <= 7; islandNum++) {
         const islandSeats = seatLayout.filter(s => s.island === islandNum);
         const freeSeats = [];
         let requiredGrades = [1, 2, 3];
 
-        // 1周目：固定設定や除外設定の確認・必要学年の抽出
+        // 1周目：固定・除外席を最優先でセットし、埋まった学年をrequired配列から引く
         islandSeats.forEach(seat => {
             if (seat.mode === "disabled") {
                 seat.assignedGrade = "来賓";
@@ -256,16 +251,16 @@ function assignSeats(isShuffle = true) {
                 seat.assignedGrade = 3;
                 requiredGrades = requiredGrades.filter(g => g !== 3);
             } else {
-                // 通常席（normal）の場合
-                if (isShuffle) {
-                    seat.assignedGrade = null; // ボタンでのシャッフル時は完全にクリア
+                // 通常席（normal）
+                if (forceShuffle) {
+                    seat.assignedGrade = null; // ボタンでのシャッフル時は一旦クリア
                 }
                 freeSeats.push(seat);
             }
         });
 
-        // シャッフル時、または通常席にまだ何も割り当てられていない場合のみランダム配置を実行
-        if (isShuffle || freeSeats.some(s => s.assignedGrade === null)) {
+        // 2周目：空いている通常席に、不足している学年 + ランダム学年を流し込む
+        if (forceShuffle || freeSeats.some(s => s.assignedGrade === null)) {
             const shuffledFreeSeats = freeSeats.sort(() => Math.random() - 0.5);
             shuffledFreeSeats.forEach(seat => {
                 if (requiredGrades.length > 0) {
@@ -285,10 +280,9 @@ function updateDOMDisplay() {
         const el = document.getElementById(`seat-${seat.id}`);
         if (!el) return;
 
-        // クラス初期化
         el.className = `seat color-${seat.color}`;
         
-        // 背景色の割り当て
+        // 背景色の描画
         if (seat.assignedGrade === "来賓") {
             el.classList.add("bg-disabled");
         } else if (seat.assignedGrade === "空白") {
@@ -301,23 +295,23 @@ function updateDOMDisplay() {
             el.classList.add("bg-grade3");
         }
 
-        // ボーダー（固定状態の見た目）の割り当て
+        // 固定・除外枠線の描画
         if (seat.mode === "locked1") el.classList.add("mode-locked1");
         if (seat.mode === "locked2") el.classList.add("mode-locked2");
         if (seat.mode === "locked3") el.classList.add("mode-locked3");
         if (seat.mode === "empty") el.classList.add("mode-empty");
 
-        // ルーレット演出中の黄色い光り
+        // 黄色いルーレット演出光
         if (seat.id === rouletteActiveSeatId) {
             el.classList.add("roulette-active");
         }
 
-        // 次の選出まで永続する緑色の光り
+        // ★緑色のターゲット光（次の選出まで絶対に上書きで剥がされない）
         if (seat.id === currentlySelectedSeatId) {
             el.classList.add("selected");
         }
 
-        // ラベルテキストの更新
+        // テキストラベル
         const labelEl = el.querySelector(".status-label");
         if (labelEl) {
             let labelText = "";
@@ -334,9 +328,8 @@ function updateDOMDisplay() {
     });
 }
 
-// 連打制限つき学年選出（ルーレット演出付き）
+// 連打制限つき学年選出
 function selectImmediate(targetGrade) {
-    // 重複除外：指定学年 ＆ 除外設定でない ＆ まだ選ばれていない席
     const targetSeats = seatLayout.filter(s => 
         s.assignedGrade === targetGrade && 
         s.mode !== "disabled" && 
@@ -349,12 +342,12 @@ function selectImmediate(targetGrade) {
         return;
     }
 
-    // 次の選出が始まったため、古い緑色の光りはクリア
+    // 新しい選出が始まったので古い光は一旦ここでクリア
     currentlySelectedSeatId = null;
-    setButtonsDisabled(true); // 連打制限：全ボタンを無効化
+    setButtonsDisabled(true); 
 
-    let duration = 1500; // 演出時間（1.5秒）
-    let intervalTime = 60; // 切り替え速度（ミリ秒）
+    let duration = 1500; 
+    let intervalTime = 60; 
     let elapsed = 0;
 
     const timer = setInterval(() => {
@@ -370,11 +363,11 @@ function selectImmediate(targetGrade) {
             // 最終決定
             const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
             selectedHistory.push(finalSeatId);
-            currentlySelectedSeatId = finalSeatId; // 新しい確定の緑色をセット
+            currentlySelectedSeatId = finalSeatId; // 緑色のターゲットとして永続セット
 
             updateDOMDisplay();
             saveToLocalStorage();
-            setButtonsDisabled(false); // 連打制限解除：ボタンを有効化
+            setButtonsDisabled(false); 
         }
     }, intervalTime);
 }
@@ -388,7 +381,7 @@ function setButtonsDisabled(disabled) {
     document.getElementById("btn-reset").disabled = disabled;
 }
 
-// 選出履歴だけをクリア
+// 選出履歴クリア
 function clearSelectionHistory() {
     if (confirm("これまでの「選出履歴（緑色の枠）」をすべてクリアして、最初から引き直せるようにしますか？")) {
         selectedHistory = [];
@@ -402,7 +395,7 @@ function clearSelectionHistory() {
 function resetAllSettingsWithAuth() {
     const password = prompt("初期化するには管理者パスワードを入力してください：");
     if (password === CORRECT_PASSWORD) {
-        localStorage.removeItem('classroom_seat_layout_v5');
+        localStorage.removeItem('classroom_seat_layout_v6');
         selectedHistory = [];
         currentlySelectedSeatId = null;
         rouletteActiveSeatId = null;
@@ -410,7 +403,7 @@ function resetAllSettingsWithAuth() {
             seat.mode = "normal";
             seat.assignedGrade = null;
         });
-        assignSeats(true);
+        recalculateNormalSeats(true);
     } else {
         alert("パスワードが違います。初期化は拒否されました。");
     }
@@ -422,11 +415,11 @@ function saveToLocalStorage() {
         history: selectedHistory,
         currentLight: currentlySelectedSeatId
     };
-    localStorage.setItem('classroom_seat_layout_v5', JSON.stringify(dataToSave));
+    localStorage.setItem('classroom_seat_layout_v6', JSON.stringify(dataToSave));
 }
 
 function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('classroom_seat_layout_v5');
+    const savedData = localStorage.getItem('classroom_seat_layout_v6');
     if (savedData) {
         const parsed = JSON.parse(savedData);
         if (parsed.history) selectedHistory = parsed.history;
@@ -440,13 +433,12 @@ function loadFromLocalStorage() {
                 }
             });
         }
-        assignSeats(false); // 保存データの状態を維持して描画
+        recalculateNormalSeats(false); // 保存された固定状態などを維持して再描画
     } else {
-        assignSeats(true);
+        recalculateNormalSeats(true);
     }
 }
 
-// 起動時にデータをロード
 loadFromLocalStorage();
 </script>
 </body>
