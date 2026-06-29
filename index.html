@@ -24,9 +24,12 @@
         .btn-r1 { background-color: #9bbfff; }
         .btn-r2 { background-color: #ffe599; }
         .btn-r3 { background-color: #f4cccc; }
-        .btn-clear-selection { background-color: #d6bcfa; } /* 選出履歴を消す紫色のボタン */
-        .btn-clear { background-color: #ff9999; } /* 保存クリアボタン */
+        .btn-clear-selection { background-color: #d6bcfa; }
+        .btn-clear { background-color: #ff9999; }
         .btn:hover { opacity: 0.8; transform: scale(1.03); }
+        
+        /* 連打防止で無効化されている時のボタンの見た目 */
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .classroom { display: flex; flex-direction: column; gap: 30px; align-items: center; width: 100%; max-width: 1100px; }
         .row-front { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; width: 75%; justify-content: center; }
@@ -73,10 +76,10 @@
     </div>
 
     <div class="controls">
-        <button class="btn btn-shuffle" onclick="assignSeats()">残りの席をシャッフル</button>
-        <button class="btn btn-r1" onclick="selectImmediate(1)">1年生を選出</button>
-        <button class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
-        <button class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
+        <button id="btn-shuffle" class="btn btn-shuffle" onclick="protectedAssignSeats(event)">残りの席をシャッフル</button>
+        <button class="btn btn-r1" onclick="selectImmediateWithLock(1, event)">1年生を選出</button>
+        <button class="btn btn-r2" onclick="selectImmediateWithLock(2, event)">2年生を選出</button>
+        <button class="btn btn-r3" onclick="selectImmediateWithLock(3, event)">3年生を選出</button>
         <button class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
         <button class="btn btn-clear" onclick="resetAllSettings()">配置を完全初期化</button>
     </div>
@@ -163,10 +166,11 @@ const seatLayout = [
     { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
 ];
 
-// 重複防止用の「過去のすべての当選履歴」
 let selectedHistory = [];
-// ★【新設】「いま現在、画面上で緑色に光らせるターゲット席」のID
 let currentlySelectedSeatId = null;
+
+// ★シャッフル用の固定パスワード（必要に応じて変更してください）
+const SHUFFLE_PASSWORD = "kamata password";
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
@@ -196,6 +200,20 @@ function drop(ev, seatId) {
     }
 }
 
+// ★パスワード保護をかけたシャッフル関数
+function protectedAssignSeats(event) {
+    const userInput = prompt("シャッフルを実行するにはパスワードを入力してください:");
+    if (userInput === null) return; // キャンセルされた場合
+
+    if (userInput === SHUFFLE_PASSWORD) {
+        // パスワード一致なら、連打防止を噛ませてシャッフルを実行
+        preventSpam(event.target, 1000);
+        assignSeats();
+    } else {
+        alert("パスワードが違います。シャッフルは拒否されました。");
+    }
+}
+
 function assignSeats() {
     for (let islandNum = 1; islandNum <= 7; islandNum++) {
         const islandSeats = seatLayout.filter(s => s.island === islandNum);
@@ -204,7 +222,7 @@ function assignSeats() {
 
         islandSeats.forEach(seat => {
             if (seat.mode === "disabled") {
-                seat.assignedGrade = "来賓";
+                seat.assignedGrade = "ゲスト";
             } else if (seat.mode === "empty") {
                 seat.assignedGrade = "空白";
             } else if (seat.mode === "locked1") {
@@ -259,7 +277,6 @@ function updateDOMDisplay() {
         if (seat.mode === "locked3") el.classList.add("mode-locked3");
         if (seat.mode === "empty") el.classList.add("mode-empty");
 
-        // ★ドラッグ＆ドロップや画面更新が走っても、ターゲットIDの1席だけを確実に緑にする
         if (seat.id === currentlySelectedSeatId) {
             el.classList.add("selected");
         }
@@ -268,7 +285,7 @@ function updateDOMDisplay() {
         if (labelEl) {
             let labelText = "";
             if (seat.mode === "disabled") {
-                labelText = "来賓";
+                labelText = "ゲスト";
             } else if (seat.mode === "empty") {
                 labelText = "空白";
             } else {
@@ -280,9 +297,15 @@ function updateDOMDisplay() {
     });
 }
 
-// 学年選出（重複防止 ＋ 次の選出まで光らせ続ける対応）
+// ★連打防止用のラッパーを噛ませた選出関数
+function selectImmediateWithLock(targetGrade, event) {
+    // 1秒間このボタンを押せなくする
+    preventSpam(event.target, 1000);
+    // 通常の選出ロジックを実行
+    selectImmediate(targetGrade);
+}
+
 function selectImmediate(targetGrade) {
-    // 1. 重複防止：まだ過去に一度も選ばれていない席をフィルタリング
     const targetSeats = seatLayout.filter(s => 
         s.assignedGrade === targetGrade && 
         s.mode !== "disabled" && 
@@ -295,48 +318,47 @@ function selectImmediate(targetGrade) {
         return;
     }
 
-    // 2. 残りの有効な席からランダムで1つ決定
     const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
-    
-    // 3. 過去履歴に追加（重複除外用）
     selectedHistory.push(finalSeatId);
-    
-    // 4. ★ターゲットIDを更新（古い光りは上書きされ、今回の1席だけが新しく光る）
     currentlySelectedSeatId = finalSeatId;
     
     updateDOMDisplay();
     saveToLocalStorage();
 }
 
-// 選出履歴だけをリセットする関数
+// ★指定されたボタン要素を一定時間無効化（連打防止）する便利関数
+function preventSpam(buttonElement, delay) {
+    if (!buttonElement) return;
+    buttonElement.disabled = true;
+    setTimeout(() => {
+        buttonElement.disabled = false;
+    }, delay);
+}
+
 function clearSelectionHistory() {
     if (confirm("これまでの「選出履歴（緑色の枠）」をすべてクリアして引き直せるようにしますか？")) {
         selectedHistory = [];
-        currentlySelectedSeatId = null; // 光りも消去
+        currentlySelectedSeatId = null;
         saveToLocalStorage();
         updateDOMDisplay();
     }
 }
 
-// ローカルストレージ保存（光っているターゲットIDも一緒に記憶）
 function saveToLocalStorage() {
     const dataToSave = {
         layout: seatLayout,
         history: selectedHistory,
-        currentLight: currentlySelectedSeatId // これを保存
+        currentLight: currentlySelectedSeatId
     };
     localStorage.setItem('classroom_seat_layout_v3', JSON.stringify(dataToSave));
 }
 
-// ローカルストレージ読み込み（光っている状態を100%復元）
 function loadFromLocalStorage() {
     const savedData = localStorage.getItem('classroom_seat_layout_v3');
     if (savedData) {
         const parsed = JSON.parse(savedData);
-        
         if (parsed.history) selectedHistory = parsed.history;
-        if (parsed.currentLight !== undefined) currentlySelectedSeatId = parsed.currentLight; // 復元
-        
+        if (parsed.currentLight !== undefined) currentlySelectedSeatId = parsed.currentLight;
         if (parsed.layout) {
             parsed.layout.forEach(savedSeat => {
                 const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
@@ -352,7 +374,6 @@ function loadFromLocalStorage() {
     }
 }
 
-// 完全初期化
 function resetAllSettings() {
     if(confirm("すべての固定設定や空白設定、選出履歴をリセットして初期化しますか？")) {
         localStorage.removeItem('classroom_seat_layout_v3');
@@ -366,7 +387,6 @@ function resetAllSettings() {
     }
 }
 
-// 起動処理
 loadFromLocalStorage();
 </script>
 </body>
