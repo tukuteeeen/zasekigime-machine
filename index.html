@@ -18,13 +18,14 @@
         .palette-dis { background-color: #555555; border-color: #222; color: #fff; }
         .palette-emp { background-color: #ffffff; border-color: #bbb; color: #666; border-style: dashed; }
 
-        .controls { margin-bottom: 25px; display: flex; gap: 12px; }
+        .controls { margin-bottom: 25px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
         .btn { padding: 10px 16px; font-size: 15px; font-weight: bold; cursor: pointer; border: 2px solid #333; border-radius: 5px; transition: 0.2s; }
         .btn-shuffle { background-color: #e2e8f0; }
         .btn-r1 { background-color: #9bbfff; }
         .btn-r2 { background-color: #ffe599; }
         .btn-r3 { background-color: #f4cccc; }
-        .btn-clear-selection { background-color: #d6bcfa; } /* ★選出履歴だけを消す紫色のボタン */
+        .btn-undo { background-color: #fed7aa; } /* ★1個戻るボタン（オレンジベージュ） */
+        .btn-clear-selection { background-color: #d6bcfa; } /* 選出履歴だけを消す紫色のボタン */
         .btn-clear { background-color: #ff9999; } /* 保存クリアボタン */
         .btn:hover { opacity: 0.8; transform: scale(1.03); }
 
@@ -54,6 +55,16 @@
 
         .seat.selected { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; transform: scale(1.08); z-index: 10; box-shadow: 0 0 15px #00ff66; }
 
+        /* ★新機能：当選した席を3秒間点滅させるアニメーション効果 */
+        .seat.blink-active {
+            animation: blink-effect 0.5s ease-in-out infinite alternate;
+            z-index: 20;
+        }
+        @keyframes blink-effect {
+            0% { background-color: #00ff66 !important; box-shadow: 0 0 5px #00ff66; }
+            100% { background-color: #ffff00 !important; box-shadow: 0 0 25px #ffff00; color: #000 !important; }
+        }
+
         .status-label { font-size: 11px; margin-top: 3px; color: #333; font-weight: bold; }
         .seat.bg-disabled .status-label { color: #ccc !important; }
         .seat.bg-empty .status-label { color: #ddd !important; }
@@ -77,6 +88,7 @@
         <button class="btn btn-r1" onclick="selectImmediate(1)">1年生を選出</button>
         <button class="btn btn-r2" onclick="selectImmediate(2)">2年生を選出</button>
         <button class="btn btn-r3" onclick="selectImmediate(3)">3年生を選出</button>
+        <button class="btn btn-undo" onclick="undoLastSelection()">1個戻る</button>
         <button class="btn btn-clear-selection" onclick="clearSelectionHistory()">選出履歴をリセット</button>
         <button class="btn btn-clear" onclick="resetAllSettings()">配置を完全初期化</button>
     </div>
@@ -163,8 +175,8 @@ const seatLayout = [
     { id: 74, island: 7, color: "red", mode: "normal", assignedGrade: null }
 ];
 
-// ★選出履歴（一度選ばれた席のID）を保存する配列
 let selectedHistory = [];
+let blinkTimeoutId = null; // 点滅タイマーの管理ID
 
 function drag(ev) {
     ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-mode"));
@@ -230,7 +242,7 @@ function assignSeats() {
         });
     }
     updateDOMDisplay();
-    saveToLocalStorage(); // 状態をブラウザに自動保存
+    saveToLocalStorage();
 }
 
 function updateDOMDisplay() {
@@ -257,7 +269,6 @@ function updateDOMDisplay() {
         if (seat.mode === "locked3") el.classList.add("mode-locked3");
         if (seat.mode === "empty") el.classList.add("mode-empty");
 
-        // ★シャッフルされても、選出履歴に残っている席には緑色クラスを再付与する
         if (selectedHistory.includes(seat.id)) {
             el.classList.add("selected");
         }
@@ -266,7 +277,7 @@ function updateDOMDisplay() {
         if (labelEl) {
             let labelText = "";
             if (seat.mode === "disabled") {
-                labelText = "ゲスト";
+                labelText = "来賓";
             } else if (seat.mode === "empty") {
                 labelText = "空白";
             } else {
@@ -278,12 +289,10 @@ function updateDOMDisplay() {
     });
 }
 
-// ★【修正コア機能】選出された席を除外リストに入れ、絶対に重複しないようにする
 function selectImmediate(targetGrade) {
-    // 画面上の緑色(直前のエフェクト)を一度リセットしたい場合は外すことも可能ですが、
-    // 連続で選ばれた席をすべて緑のまま残すため、今回はクラスを剥がさず重複防止だけ連動させます。
-    
-    // 候補の絞り込み：指定した学年 ＆ 来賓・空白でない ＆ 「まだ選出履歴（selectedHistory）に入っていない」席
+    // 新しい選出が走る前に、前の席の点滅クラスを強制クリア
+    clearAllBlinkClasses();
+
     const targetSeats = seatLayout.filter(s => 
         s.assignedGrade === targetGrade && 
         s.mode !== "disabled" && 
@@ -296,27 +305,53 @@ function selectImmediate(targetGrade) {
         return;
     }
 
-    // 重複のない残り候補からランダムで1つ決定
     const finalSeatId = targetSeats[Math.floor(Math.random() * targetSeats.length)];
-    
-    // 履歴配列に追加
     selectedHistory.push(finalSeatId);
     
-    // 画面を更新してローカルストレージに保存
+    updateDOMDisplay();
+    saveToLocalStorage();
+
+    // ★今回の当選席を取得して点滅クラスを付与 (3秒後に自動停止)
+    const activeSeatEl = document.getElementById(`seat-${finalSeatId}`);
+    if (activeSeatEl) {
+        activeSeatEl.classList.add("blink-active");
+        blinkTimeoutId = setTimeout(() => {
+            activeSeatEl.classList.remove("blink-active");
+        }, 3000);
+    }
+}
+
+// ★【新機能】直近に選ばれた席を履歴から1つ消去して元に戻す
+function undoLastSelection() {
+    if (selectedHistory.length === 0) {
+        alert("戻せる選出履歴がありません。");
+        return;
+    }
+    
+    clearAllBlinkClasses(); // 点滅タイマーをリセット
+    
+    // 末尾（最後）の要素を1つ削除
+    selectedHistory.pop();
+    
     updateDOMDisplay();
     saveToLocalStorage();
 }
 
-// ★【新規追加】選出された履歴（緑色）だけをリセットする関数
+// 画面全体の点滅クラスとタイマーを安全にリセットする補助関数
+function clearAllBlinkClasses() {
+    if (blinkTimeoutId) clearTimeout(blinkTimeoutId);
+    document.querySelectorAll('.seat').forEach(el => el.classList.remove('blink-active'));
+}
+
 function clearSelectionHistory() {
     if (confirm("これまでの「選出履歴（緑色の枠）」をすべてクリアして引き直せるようにしますか？")) {
+        clearAllBlinkClasses();
         selectedHistory = [];
         saveToLocalStorage();
         updateDOMDisplay();
     }
 }
 
-// 【修正】ブラウザのlocalStorageに履歴も一緒に保存する
 function saveToLocalStorage() {
     const dataToSave = {
         layout: seatLayout,
@@ -325,16 +360,11 @@ function saveToLocalStorage() {
     localStorage.setItem('classroom_seat_layout_v2', JSON.stringify(dataToSave));
 }
 
-// 【修正】読み込み時に選出履歴も完全に復元する
 function loadFromLocalStorage() {
     const savedData = localStorage.getItem('classroom_seat_layout_v2');
     if (savedData) {
         const parsed = JSON.parse(savedData);
-        
-        // 履歴を復元
         if (parsed.history) selectedHistory = parsed.history;
-        
-        // レイアウト状態を復元
         if (parsed.layout) {
             parsed.layout.forEach(savedSeat => {
                 const currentSeat = seatLayout.find(s => s.id === savedSeat.id);
@@ -350,9 +380,9 @@ function loadFromLocalStorage() {
     }
 }
 
-// クリアボタン用：全設定を消去して初期状態にする
 function resetAllSettings() {
     if(confirm("すべての固定設定や空白設定、選出履歴をリセットして初期化しますか？")) {
+        clearAllBlinkClasses();
         localStorage.removeItem('classroom_seat_layout_v2');
         selectedHistory = [];
         seatLayout.forEach(seat => {
@@ -363,7 +393,6 @@ function resetAllSettings() {
     }
 }
 
-// 起動時にロード処理を走らせる
 loadFromLocalStorage();
 </script>
 </body>
